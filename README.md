@@ -1,4 +1,7 @@
-# Soft Robot evolution using Evolution Gym and Map Elites
+# Soft Robot evolution: Evolution Gym and Map Elites
+Soft robot evolution using:
+- [EvolutionGym](https://github.com/EvolutionGym/evogym) benchmark, to co-optimize control and design and run simulations
+- Map Elites, provided by [QDPY](https://gitlab.com/leo.cazenille/qdpy), to promote diversity
 
 # Installation
 
@@ -15,4 +18,4 @@ pip3 install qdpy[all]
 ```shell
 git clone --recurse-submodules https://github.com/EvolutionGym/evogym.git
 ```
-and follow the instructions to install it at https://github.com/EvolutionGym/evogym
+and follow the instructions to install it at [evogym repository](https://github.com/EvolutionGym/evogym)
