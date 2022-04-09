@@ -1,6 +1,6 @@
 import os
-
 from qd.run import run_qd
+
     
 if __name__ == '__main__':
 
@@ -13,10 +13,8 @@ if __name__ == '__main__':
     args['resultsBaseDir'] = os.path.join('results', experiment_name)
     args['parallelismType'] = 'multithreading'      
 
-
     ## RUN                                       
     run_qd(
         experiment_name = experiment_name,
         args = args,
     )
-    
