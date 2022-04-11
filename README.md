@@ -7,7 +7,7 @@ Soft robot evolution using:
 
 Clone the repository:
 ```shell
-git clone https://github.com/elisacomposta/soft-robot-evolution-qd.git
+git clone https://github.com/elisacomposta/soft-robot-evolution.git
 ```
 <br>Install qdpy:
 ```shell
