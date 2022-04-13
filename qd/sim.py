@@ -33,7 +33,7 @@ from ppo import run_ppo
 
 ###### SIMULATION FUNCTIONS ######
 
-def simulate(env_name, inds, experiment_name, num_episode=5):
+def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
 
     ## DEFINE TERMINATION CONDITION
     tc = TerminationCondition(num_episode)
@@ -55,7 +55,6 @@ def simulate(env_name, inds, experiment_name, num_episode=5):
         ppo_args = (ind, tc, (save_path, ind.structure.label), env_name, False)
         group.add_job(run_ppo, ppo_args, callback=ind.structure.set_reward)
 
-    num_cores = 12
     group.run_jobs(num_cores)
 
     for ind in inds:
@@ -90,18 +89,20 @@ def compute_features(ind, features_list):
     length = compute_length(ind.structure)
     height = compute_height(ind.structure)
     baseLength = compute_base_length(ind.structure)
-    emptyRate = compute_empty_rate(ind.structure)
+    emptiness = compute_emptiness(ind.structure)
     compactness = compute_compactness(ind.structure)
-    #elongation = compute_elongation(ind.structure, 2)
-
+    elongation = compute_elongation(ind.structure, 2)
+    #print()
+    #print("Elongation:", elongation)
+    #print()
     scores = {
             "reward": ind.structure.fitness,
             "length": length,     
             "height": height,
             "baseLength": baseLength,
-            "emptyRate": emptyRate,
+            "emptiness": emptiness,
             "compactness": compactness,
-            #"elongation": elongation    #define domains
+            "elongation": elongation    #define domains
     } 
     ind.features.values = [scores[x] for x in features_list]
 
@@ -230,13 +231,13 @@ def compute_base_length(structure):
     return baseLength
 
 
-def compute_empty_rate(structure):
+def compute_emptiness(structure):
     totEmpty=0
     for i in structure.body:
         for j in i:
             totEmpty += 1 if j==0 else 0
-    emptyRate = totEmpty/(len(structure.body) * len(structure.body[0]) ) * 100
-    return emptyRate
+    emptiness = totEmpty/(len(structure.body) * len(structure.body[0]) )
+    return emptiness
 
 
 def compute_compactness(structure):
@@ -273,63 +274,56 @@ def compute_compactness(structure):
 
 
 def compute_elongation(structure, n_dir):
-    
-    print("\ncomputing elongation in", n_dir, " directions")
-    
+    # TODO: check this method
+    #print("\ncomputing elongation in", n_dir, " directions")
 
-    """if (posture.values().stream().noneMatch(e -> e)) {
-      throw new IllegalArgumentException("Grid is empty");
-    } else if (n <= 0) {
-      throw new IllegalArgumentException(String.format("Non-positive number of directions provided: %d", n));
-    }"""
+    # TODO: gestione struttura vuota
+    # TODO: gestione n_dir <0
 
-    """List<Grid.Key> coordinates = posture.stream()
-        .filter(Grid.Entry::value)
-        .map(Grid.Entry::key)"""
+    coordinates = []
+    for i in range(structure.shape[0]):
+        for j in range(structure.shape[1]):
+            if structure.body[i][j] != 0:
+                coordinates.append([i, j])
 
-    coordinates = structure.body #?
-    shape = structure.shape
-
-    from scipy.ndimage.interpolation import rotate
-    #List<Double> diameters = new ArrayList<>();
+    #print("Structure:\n", structure.body)
     diameters = []
+
     for i in range(n_dir):
         theta = (2 * i * math.pi) / n_dir
-        """rotatedCoordinates = coordinates.stream() #list
-            .map(p -> new Grid.Key(
-                (int) Math.round(p.x() * Math.cos(theta) - p.y() * Math.sin(theta)),
-                (int) Math.round(p.x() * Math.sin(theta) + p.y() * Math.cos(theta))
-            ))
-            .toList()
+        #print()
+        #print("Theta: ", theta)
+        rotated_coordinates = []
+        
+        for p in coordinates:
+            x = p[0]
+            y = p[1]
+            new_x = (int) ( x * math.cos(theta) - y * math.sin(theta) )
+            new_y = (int) ( x * math.sin(theta) + y * math.cos(theta) )
+            #print(f"({x},{y}) -> ({new_x},{new_y})")        #alcuni conti sbagliati??
+            rotated_coordinates.append([new_x, new_y])
 
-        #rotated = rotate(structure.body, angle=45, reshape=False)
+        minX, maxX = range_x(rotated_coordinates)
+        minY, maxY = range_y(rotated_coordinates)
 
-        #print("body:\n", structure.body)
-        #print("\nRotated structure ", i, ":")
-        #print(rotated)
+        sideX = maxX - minX +1
+        sideY = maxY - minY +1
+        diameters.append( min(sideX, sideY) / max(sideX, sideY) )
 
+    return 1 - min(diameters)
 
+def range_x(coordinates):
+    coordinates = np.array(coordinates)
+    sorted = np.argsort(coordinates[:,0])
+    min_x = coordinates[sorted[0],:][0]
+    max_x = coordinates[sorted[-1],:][0]
+    #print("minX: ", min_x, " maxX: ", max_x)
+    return min_x, max_x
 
-        #rotatedCoordinates = deepcopy(structure.body)
-        rotatedCoordinates = np.zeros((shape[0], shape[1]))
-        for x in range(shape[0]):
-            for y in range(shape[1]):
-                rotX = round( x * math.cos(theta) - y * math.sin(theta) ) + shape[0]-1
-                rotY = round( x * math.sin(theta) + y * math.cos(theta) ) + shape[1]-1
-                print(f"mapping {x},{y} to {rotX},{rotY}")
-                voxel =[rotX, rotY]
-                print("voxel: ", voxel)
-                #structure.body[voxel[0]][voxel[1]]
-            rotatedCoordinates[x][y] = rotatedCoordinates[rotX][rotY]
-            
-                
-        minX = rotatedCoordinates.stream().min(Comparator.comparingInt(Grid.Key::x)).get().x()
-        maxX = rotatedCoordinates.stream().max(Comparator.comparingDouble(Grid.Key::x)).get().x()
-        minY = rotatedCoordinates.stream().min(Comparator.comparingDouble(Grid.Key::y)).get().y()
-        maxY = rotatedCoordinates.stream().max(Comparator.comparingDouble(Grid.Key::y)).get().y()
-        sideX = maxX - minX + 1
-        sideY = maxY - minY + 1
-        diameters.add(min(sideX, sideY) / max(sideX, sideY))
-    
-    #ret = 1.0 - min(diameters)
-    return ret"""
+def range_y(coordinates):
+    coordinates = np.array(coordinates)
+    sorted = np.argsort(coordinates[:,1])
+    min_y = coordinates[sorted[0],:][1]
+    max_y = coordinates[sorted[-1],:][1]
+    #print("minY: ", min_y, " maxY: ", max_y)
+    return min_y, max_y

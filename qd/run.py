@@ -35,7 +35,7 @@ class EvoGymExperiment(QDExperiment):
                 ind=ind)
             compute_features(ind, self.features_list)
 
-        simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')])  #compute fitness
+        simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
 
         ## STORE RESULTS
         output_path = os.path.join(root_dir, "results", self.experiment_name)
@@ -92,7 +92,7 @@ def store_results(path, individuals):
 
 
 ###### RUN EXPERIMENT ######
-def run_qd(experiment_name, args):
+def run_qd(experiment_name, args, num_cores=4):
     print()
 
     ## MANAGE DIRECTORIES
@@ -116,7 +116,7 @@ def run_qd(experiment_name, args):
     try:
         exp = create_experiment(args, base_config, experiment_name=experiment_name)
         store_metadata(exp, args['configFileName'], save_path)
-        
+        exp.num_cores = num_cores
         start_time = time.time()
 
         launch_experiment(exp)
