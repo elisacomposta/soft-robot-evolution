@@ -53,7 +53,7 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
         ## COMPUTE FITNESS: RUN PPO OR GROUP JOBS
         #ind.structure.reward = run_ppo(structure=(ind.structure.body, ind.structure.connections), termination_condition=tc, saving_convention=(save_path, ind.structure.label), verbose=False)
         ppo_args = (ind, tc, (save_path, ind.structure.label), env_name, False)
-        group.add_job(run_ppo, ppo_args, callback=ind.structure.set_reward)
+        #group.add_job(run_ppo, ppo_args, callback=ind.structure.set_reward)
 
     group.run_jobs(num_cores)
 

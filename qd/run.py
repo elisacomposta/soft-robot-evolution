@@ -1,5 +1,6 @@
 import os
 import shutil
+from unittest import result
 import warnings
 import traceback
 
@@ -45,40 +46,39 @@ class EvoGymExperiment(QDExperiment):
 
 
 ##### BASE FUNCTIONS ######
-def create_base_config(args):
+def create_base_config(resultDir):
     base_config = {}
-    if len(args['resultsBaseDir']) > 0:
-        base_config['resultsBaseDir'] = args['resultsBaseDir']
+    if len(resultDir) > 0:
+        base_config['resultsBaseDir'] = resultDir
     return base_config
 
-def create_experiment(args, base_config, experiment_name):
-    exp = EvoGymExperiment(args['configFileName'], args['parallelismType'], seed=None, base_config=base_config) #seed defined in conf file
+def create_experiment(experiment_name, configFileName, parallelismType, base_config, num_cores):
+    exp = EvoGymExperiment(configFileName, parallelismType, seed=None, base_config=base_config) #seed defined in conf file
     exp.experiment_name = experiment_name
-    print("Using configuration file '%s'. Instance name: '%s'" % (args['configFileName'], exp.instance_name))
+    exp.num_cores = num_cores
+    print("Using configuration file '%s'. Instance name: '%s'" % (configFileName, exp.instance_name))
     return exp
 
 def launch_experiment(exp):
     print()
     exp.run()      # run illumination process
 
-def store_metadata(exp, configFile, save_path):
-    import yaml
-    config = yaml.safe_load(open(configFile))
+def store_metadata(exp, save_path):
     save_path_metadata = os.path.join(save_path, 'metadata.txt')
     f = open(save_path_metadata, "w")
-    f.write(f'ENVIRONMENT: {config.get("env_name")}\n')
-    f.write(f'CONFIGURATION FILE: {configFile}\n')
+    f.write(f'ENVIRONMENT: {exp.env_name}\n')
+    f.write(f'CONFIGURATION FILE: {exp.config_filename}\n')
     f.write(f'INSTANCE: {exp.instance_name}\n')
-    f.write(f'SEED: {config.get("seed")}\n')
-    f.write(f'INDV EPS: {config.get("indv_eps")}\n')
-    f.write(f'SHAPE: {config.get("shape")}\n')
-    f.write(f'FITNESS: {config.get("fitness_type")}\n')
-    f.write(f'FEATURES: {config.get("features_list")}\n')
+    f.write(f'SEED: {exp.config["seed"]}\n')
+    f.write(f'INDV EPS: {exp.config["indv_eps"]}\n')
+    f.write(f'SHAPE: {exp.shape}\n')
+    f.write(f'FITNESS: {exp.fitness_type}\n')
+    f.write(f'FEATURES: {exp.features_list}\n')
     f.write("\n")
     
-    algos = config['algorithms']['algoTotal']['algorithms']
+    algos = exp.config['algorithms']['algoTotal']['algorithms']
     for x in range(len(algos)):
-        tot = config['algorithms'][algos[x]]['budget']
+        tot = exp.config['algorithms'][algos[x]]['budget']
         f.write(f'generation_{x}\ttot_ind:{tot}\t{algos[x]}\n')
 
     f.close()
@@ -92,11 +92,11 @@ def store_results(path, individuals):
 
 
 ###### RUN EXPERIMENT ######
-def run_qd(experiment_name, args, num_cores=4):
+def run_qd(experiment_name, configFileName, resultsBaseDir, parallelismType, num_cores=4):
     print()
 
     ## MANAGE DIRECTORIES
-    save_path = os.path.join(root_dir, 'results', experiment_name)
+    save_path = os.path.join(root_dir, resultsBaseDir, experiment_name)
     try:
         os.makedirs(save_path)
     except:
@@ -112,12 +112,12 @@ def run_qd(experiment_name, args, num_cores=4):
 
 
     ## LAUNCH EXPERIMENT
-    base_config = create_base_config(args)
+    base_config = create_base_config(save_path)
     try:
-        exp = create_experiment(args, base_config, experiment_name=experiment_name)
-        store_metadata(exp, args['configFileName'], save_path)
-        exp.num_cores = num_cores
-        start_time = time.time()
+        exp = create_experiment(experiment_name, configFileName, parallelismType, base_config, num_cores)
+        store_metadata(exp, save_path)
+
+        start_time = time.time()    # tmp: start timer
 
         launch_experiment(exp)
 

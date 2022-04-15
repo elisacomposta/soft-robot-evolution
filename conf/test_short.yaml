@@ -35,7 +35,7 @@ algorithms:
     # first explore the feature landscape by random search
     algoInit:
         type: RandomUniform 
-        budget: 2        # The total number of allowed evaluations
+        budget: 10        # The total number of allowed evaluations
         #batch_size: 4
 
     algoQD:
