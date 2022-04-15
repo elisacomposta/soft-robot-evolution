@@ -63,6 +63,7 @@ def launch_experiment(exp):
     print()
     exp.run()      # run illumination process
 
+##### STORE DATA ####
 def store_metadata(exp, save_path):
     save_path_metadata = os.path.join(save_path, 'metadata.txt')
     f = open(save_path_metadata, "w")

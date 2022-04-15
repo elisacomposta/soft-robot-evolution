@@ -92,9 +92,9 @@ def compute_features(ind, features_list):
     emptiness = compute_emptiness(ind.structure)
     compactness = compute_compactness(ind.structure)
     elongation = compute_elongation(ind.structure, 2)
-    #print()
-    #print("Elongation:", elongation)
-    #print()
+    print()
+    print("Elongation:", elongation)
+    print()
     scores = {
             "reward": ind.structure.fitness,
             "length": length,     
@@ -286,21 +286,18 @@ def compute_elongation(structure, n_dir):
             if structure.body[i][j] != 0:
                 coordinates.append([i, j])
 
-    #print("Structure:\n", structure.body)
+    print("\nStructure:\n", structure.body)
     diameters = []
 
     for i in range(n_dir):
         theta = (2 * i * math.pi) / n_dir
-        #print()
-        #print("Theta: ", theta)
         rotated_coordinates = []
         
         for p in coordinates:
             x = p[0]
             y = p[1]
-            new_x = (int) ( x * math.cos(theta) - y * math.sin(theta) )
-            new_y = (int) ( x * math.sin(theta) + y * math.cos(theta) )
-            #print(f"({x},{y}) -> ({new_x},{new_y})")        #alcuni conti sbagliati??
+            new_x = round( x * math.cos(theta) - y * math.sin(theta) )
+            new_y = round( x * math.sin(theta) + y * math.cos(theta) )
             rotated_coordinates.append([new_x, new_y])
 
         minX, maxX = range_x(rotated_coordinates)
@@ -317,7 +314,6 @@ def range_x(coordinates):
     sorted = np.argsort(coordinates[:,0])
     min_x = coordinates[sorted[0],:][0]
     max_x = coordinates[sorted[-1],:][0]
-    #print("minX: ", min_x, " maxX: ", max_x)
     return min_x, max_x
 
 def range_y(coordinates):
@@ -325,5 +321,4 @@ def range_y(coordinates):
     sorted = np.argsort(coordinates[:,1])
     min_y = coordinates[sorted[0],:][1]
     max_y = coordinates[sorted[-1],:][1]
-    #print("minY: ", min_y, " maxY: ", max_y)
     return min_y, max_y
