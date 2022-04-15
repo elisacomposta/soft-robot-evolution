@@ -7,12 +7,13 @@ shape: [5, 5]
 fitness_type: "reward"
 rewardDomain: [-1., 10.]
 
-features_list: ["baseLength", "emptyRate"]
+features_list: ["baseLength", "emptiness"]
 lengthDomain: [1., 5.]
 heightDomain: [1., 5.]
 baseLengthDomain: [0., 5.]
-emptyRateDomain: [0., 100.]
+emptinessDomain: [0., 100.]
 compactness: [0., 1.]
+elongationDomain: [0., 1.]
 
 containers:
     cont0:
