@@ -92,9 +92,6 @@ def compute_features(ind, features_list):
     emptiness = compute_emptiness(ind.structure)
     compactness = compute_compactness(ind.structure)
     elongation = compute_elongation(ind.structure, 2)
-    print()
-    print("Elongation:", elongation)
-    print()
     scores = {
             "reward": ind.structure.fitness,
             "length": length,     
@@ -283,7 +280,6 @@ def compute_elongation(structure, n_dir):
             if structure.body[i][j] != 0:
                 coordinates.append([i, j])
 
-    print("\nStructure:\n", structure.body)
     diameters = []
 
     for i in range(n_dir):
