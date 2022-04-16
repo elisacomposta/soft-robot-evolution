@@ -11,7 +11,7 @@ lengthDomain: [1., 5.]
 heightDomain: [1., 5.]
 baseLengthDomain: [0., 5.]
 emptinessDomain: [0., 1.]
-compactness: [0., 1.]
+compactnessDomain: [0., 1.]
 elongationDomain: [0., 1.]
 
 containers:
