@@ -2,7 +2,6 @@ seed: 32
 indv_eps: 5       # episodes per individual
 env_name: 'Walker-v0'
 shape: [5, 5]
-#batch_mode: False
 
 fitness_type: "reward"
 rewardDomain: [-1., 10.]
@@ -36,12 +35,10 @@ algorithms:
     algoInit:
         type: RandomUniform 
         budget: 10        # The total number of allowed evaluations
-        #batch_size: 4
 
     algoQD:
         type: RandomSearchMutPolyBounded    # In realtà viene applicata la mutazione proposta da evogym (algo_utils.py)
         budget: 0                           # The total number of allowed evaluations
-        #batch_size: 2                       # The number of evaluations in each subsequent batch 
     
     # All described algorithms are placed in a Sequence (Sq) of algorithms to execute them one after the other
     algoTotal:

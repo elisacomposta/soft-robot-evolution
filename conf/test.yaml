@@ -1,8 +1,7 @@
 seed: 32
-indv_eps: 20       # episodes per individual
+indv_eps: 40       # episodes per individual
 env_name: 'Walker-v0'
 shape: [5, 5]
-#batch_mode: False
 
 fitness_type: "reward"
 rewardDomain: [-1., 10.]
@@ -11,7 +10,7 @@ features_list: ["baseLength", "emptiness"]
 lengthDomain: [1., 5.]
 heightDomain: [1., 5.]
 baseLengthDomain: [0., 5.]
-emptinessDomain: [0., 100.]
+emptinessDomain: [0., 1.]
 compactness: [0., 1.]
 elongationDomain: [0., 1.]
 
@@ -35,13 +34,11 @@ algorithms:
     # first explore the feature landscape by random search
     algoInit:
         type: RandomUniform 
-        budget: 5        # The total number of allowed evaluations
-        #batch_size: 4
+        budget: 1000        # The total number of allowed evaluations
 
     algoQD:
         type: RandomSearchMutPolyBounded    # In realtà viene applicata la mutazione proposta da evogym (algo_utils.py)
-        budget: 5                           # The total number of allowed evaluations
-        #batch_size: 2                       # The number of evaluations in each subsequent batch 
+        budget: 500                           # The total number of allowed evaluations
     
     # All described algorithms are placed in a Sequence (Sq) of algorithms to execute them one after the other
     algoTotal:
