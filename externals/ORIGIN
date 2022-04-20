@@ -1,3 +1,4 @@
 Submodules taken from:
- - https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail.git
  - https://github.com/uber-research/PyTorch-NEAT
+ - https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail.git
+
