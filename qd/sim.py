@@ -16,7 +16,6 @@ from evogym.envs.balance import Balance, BalanceJump
 from evogym.envs.change_shape import MaximizeShape, MinimizeShape
 from evogym.envs.traverse import StepsUp, StepsDown, WalkingBumpy, WalkingBumpy2, VerticalBarrier, FloatingPlatform, Gaps, BlockSoup
 from evogym.envs.manipulate import CarrySmallRect, CarrySmallRectToTable, PushSmallRect, PushSmallRectOnOppositeSide, ThrowSmallRect, CatchSmallRect
-#import utils.mp_group as mp
 from utils.algo_utils import Structure, TerminationCondition, mutate
 import utils.mp_group as mp
 from evogym import EvoWorld, EvoSim, EvoViewer
@@ -265,22 +264,19 @@ def compute_compactness(structure):
 
     nVoxels = len(np.nonzero(structure.body)[0])            # non empty voxels in body
     nConvexHull = len(np.matrix.nonzero(convexHull)[0])     # non empty voxels in convex hull
-
-    # -> 0.0 for less compact shapes, -> 1.0 for more compact shapes
-    return nVoxels / nConvexHull
+    return nVoxels / nConvexHull    # -> 0.0 for less compact shapes, -> 1.0 for more compact shapes
 
 
 def compute_elongation(structure, n_dir):
-    # TODO: gestione struttura vuota
-    # TODO: gestione n_dir <0
+    if n_dir < 0:
+        warnings.warn(UserWarning("n_dir shoud be a non negative number"))
 
+    diameters = []
     coordinates = []
     for i in range(structure.shape[0]):
         for j in range(structure.shape[1]):
             if structure.body[i][j] != 0:
                 coordinates.append([i, j])
-
-    diameters = []
 
     for i in range(n_dir):
         theta = (2 * i * math.pi) / n_dir
@@ -295,7 +291,6 @@ def compute_elongation(structure, n_dir):
 
         minX, maxX = range_x(rotated_coordinates)
         minY, maxY = range_y(rotated_coordinates)
-
         sideX = maxX - minX +1
         sideY = maxY - minY +1
         diameters.append( min(sideX, sideY) / max(sideX, sideY) )
