@@ -93,11 +93,11 @@ def store_results(path, individuals):
 
 
 ###### RUN EXPERIMENT ######
-def run_qd(experiment_name, configFileName, resultsBaseDir, parallelismType, num_cores=4):
+def run_qd(experiment_name, configFileName, parallelismType, num_cores=4):
     print()
 
     ## MANAGE DIRECTORIES
-    save_path = os.path.join(root_dir, resultsBaseDir, experiment_name)
+    save_path = os.path.join(root_dir, 'results', experiment_name)
     try:
         os.makedirs(save_path)
     except:
