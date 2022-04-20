@@ -34,7 +34,7 @@ algorithms:
     # first explore the feature landscape by random search
     algoInit:
         type: RandomUniform 
-        budget: 1        # The total number of allowed evaluations
+        budget: 10        # The total number of allowed evaluations
 
     algoQD:
         type: RandomSearchMutPolyBounded    # In realtà viene applicata la mutazione proposta da evogym (algo_utils.py)
