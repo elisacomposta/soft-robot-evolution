@@ -1,0 +1,6 @@
+[submodule "PyTorch-NEAT"]
+	path = PyTorch-NEAT
+	url = https://github.com/uber-research/PyTorch-NEAT
+[submodule "pytorch-a2c-ppo-acktr-gail"]
+	path = pytorch-a2c-ppo-acktr-gail
+	url = https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail.git
