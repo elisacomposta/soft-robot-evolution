@@ -1,4 +1,5 @@
 Derived from https://gitlab.com/leo.cazenille/qdpy
+
 Changes:
  - phenotype.py: add structure to class Individual
  - experiment.py: don't save final.p, don't show summary, set labels
