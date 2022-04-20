@@ -26,7 +26,7 @@ Parameters can be defined in `run_qd.py`:
 - `configFileName` = name of the YAML configuration file
 - `num_cores` = number of robots to train in parallel
 - `parallelismType` = type of parallelism used for the illumination process. <br>
-   _Note_: QDPY proposes many types of executors ('sequential', 'multithreading', 'multiprocessing', 'concurrent','scoop', 'ray'). For more details see `qdpy/base.py`.
+   _Note_: QDPY proposes many types of executors ('sequential', 'multithreading', 'multiprocessing', 'concurrent', 'scoop', 'ray'). For more details see `qdpy/base.py`.
 
 
 The environment name and other parameters can be defined in the configuration file. See the examples in `conf/`.
