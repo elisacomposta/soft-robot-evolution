@@ -1,3 +1,5 @@
+# Adapted from https://github.com/EvolutionGym/evogym/tree/main/examples
+
 import os, sys
 root_dir = os.path.dirname(os.path.abspath(__file__))
 external_dir = os.path.join(root_dir, 'externals')
