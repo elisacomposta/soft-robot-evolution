@@ -1,0 +1,9 @@
+Derived from https://gitlab.com/leo.cazenille/qdpy
+Changes:
+ - phenotype.py: add structure to class Individual
+ - experiment.py: don't save final.p, don't show summary, set labels
+ - plots.py: ignore warnings (due to version compatibility)
+ - algorithms/base.py: 
+      - keep track of generation (in ask, optimize)
+      - consider robot structure (in tell)
+      - start evaluation of the whole generation (in optimize)
