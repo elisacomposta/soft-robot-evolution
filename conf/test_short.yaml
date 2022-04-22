@@ -4,12 +4,12 @@ env_name: 'Walker-v0'
 shape: [5, 5]
 
 fitness_type: "reward"
-rewardDomain: [-1., 10.]
+rewardDomain: [0., 10.]
 
-features_list: ["baseLength", "emptiness"]
-lengthDomain: [1., 5.]
-heightDomain: [1., 5.]
-baseLengthDomain: [0., 5.]
+features_list: ["compactness", "emptiness"]
+lengthDomain: [1, 5]
+heightDomain: [1, 5]
+baseLengthDomain: [0, 5]
 emptinessDomain: [0., 1.]
 compactnessDomain: [0., 1.]
 elongationDomain: [0., 1.]
@@ -18,7 +18,7 @@ containers:
     cont0:
         type: Grid                       # The type of the container (e.g. Grid, CVTGrid, Container, NoveltyArchive, ...)
         name: cont0                      # The name of the container. Optional. Default to the parent key (here also 'cont0')
-        shape: [25, 25]                  # The number of bins for each feature
+        shape: [10, 10]                  # The number of bins for each feature
         max_items_per_bin: 1             # The number of items in each bin of the grid
 
 main_algorithm_name: algoTotal
@@ -34,7 +34,7 @@ algorithms:
     # first explore the feature landscape by random search
     algoInit:
         type: RandomUniform 
-        budget: 10        # The total number of allowed evaluations
+        budget: 100        # The total number of allowed evaluations
 
     algoQD:
         type: RandomSearchMutPolyBounded    # In realtà viene applicata la mutazione proposta da evogym (algo_utils.py)

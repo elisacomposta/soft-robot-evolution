@@ -7,9 +7,9 @@ fitness_type: "reward"
 rewardDomain: [-1., 10.]
 
 features_list: ["baseLength", "emptiness"]
-lengthDomain: [1., 5.]
-heightDomain: [1., 5.]
-baseLengthDomain: [0., 5.]
+lengthDomain: [1, 5]
+heightDomain: [1, 5]
+baseLengthDomain: [0, 5]
 emptinessDomain: [0., 1.]
 compactnessDomain: [0., 1.]
 elongationDomain: [0., 1.]
@@ -18,7 +18,7 @@ containers:
     cont0:
         type: Grid                       # The type of the container (e.g. Grid, CVTGrid, Container, NoveltyArchive, ...)
         name: cont0                      # The name of the container. Optional. Default to the parent key (here also 'cont0')
-        shape: [25, 25]                  # The number of bins for each feature
+        shape: [5, 5]                  # The number of bins for each feature
         max_items_per_bin: 1             # The number of items in each bin of the grid
 
 main_algorithm_name: algoTotal
