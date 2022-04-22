@@ -42,7 +42,7 @@ def plotGridSubplots(data, outputFilename, cmap, featuresBounds=((0., 1.), (0., 
     elif len(data.shape) <= 2:
         plotGrid(data, outputFilename, cmap, featuresBounds=featuresBounds, fitnessBounds=fitnessBounds, drawCbar=drawCbar, xlabel=xlabel, ylabel=ylabel, cBarLabel=cBarLabel, nbBins=nbBins, nbTicks=nbTicks)
         return
-
+        
     # Verify dimension is even
     if len(data.shape) % 2 == 1:
         data = data.reshape((data.shape[0], 1) + data.shape[1:])
@@ -115,29 +115,8 @@ def drawGridInAx(data, ax, cmap, featuresBounds, fitnessBounds, aspect="equal", 
     ax.invert_yaxis()
 
     # Define the number of ticks on x,y axis
-    if is_iterable(nbTicks):
-        if len(nbTicks) != 2:
-            raise ValueError("nbTicks can be None, an Integer or a Sequence of size 2.")
-        nbTicksX, nbTicksY = nbTicks
-    elif nbTicks == None:
-        nbTicksX = round(pow(nbBins[0], 1./2.))
-        nbTicksX = nbTicksX if nbTicksX % 2 == 0 else nbTicksX + 1
-        nbTicksY = round(pow(nbBins[1], 1./2.))
-        nbTicksY = nbTicksY if nbTicksY % 2 == 0 else nbTicksY + 1
-    else:
-        if nbBins[0] > nbBins[1]:
-            nbTicksX = nbTicks
-            nbTicksY = int(nbTicksX * nbBins[1] / nbBins[0])
-        elif nbBins[1] > nbBins[0]:
-            nbTicksY = nbTicks
-            nbTicksX = int(nbTicksY * nbBins[0] / nbBins[1])
-        else:
-            nbTicksX = nbTicksY = nbTicks
-        # Verify than the number of ticks is valid
-        if nbTicksX > nbBins[0] or nbTicksX < 1:
-            nbTicksX = min(nbBins[0], nbTicks)
-        if nbTicksY > nbBins[1] or nbTicksY < 1:
-            nbTicksY = min(nbBins[1], nbTicks)
+    nbTicksX = data.shape[0]
+    nbTicksY = data.shape[1]
 
     # Set ticks
     import warnings         #ignore warnings (version compatibility bug: "UserWarning: FixedFormatter should only be used together with FixedLocator")
@@ -146,17 +125,22 @@ def drawGridInAx(data, ax, cmap, featuresBounds, fitnessBounds, aspect="equal", 
     ax.xaxis.set_tick_params(which='major', left=True, bottom=True, top=False, right=False)
     ax.yaxis.set_tick_params(which='major', left=True, bottom=True, top=False, right=False)
     if len(featuresBounds) > 1:
-        xticks = list(np.arange(0, data.shape[0] + 1, data.shape[0] / nbTicksX))
-        yticks = list(np.arange(0, data.shape[1] + 1, data.shape[1] / nbTicksY))
-        deltaFeature0 = featuresBounds[0][1] - featuresBounds[0][0]
-        ax.set_xticklabels([round(float(x / float(data.shape[0]) * deltaFeature0 + featuresBounds[0][0]), 2) for x in xticks], fontsize=22)
-        deltaFeature1 = featuresBounds[1][1] - featuresBounds[1][0]
-        ax.set_yticklabels([round(float(y / float(data.shape[1]) * deltaFeature1 + featuresBounds[1][0]), 2) for y in yticks], fontsize=22)
+
+        deltaFeaturex = featuresBounds[0][1] - featuresBounds[0][0]
+        deltaFeaturey = featuresBounds[1][1] - featuresBounds[1][0]
+        stepx = deltaFeaturex / nbTicksX
+        stepy = deltaFeaturey / nbTicksY
+
+        xticks = (np.arange(0, featuresBounds[0][1] + stepx, stepx, dtype=type(featuresBounds[0][0]))).round(2)
+        yticks = (np.arange(0, featuresBounds[1][1] + stepy, stepy, dtype=type(featuresBounds[1][1]))).round(2)
+        
+        ax.set_xticklabels(xticks, fontsize=18)
+        ax.set_yticklabels(yticks, fontsize=18)
         plt.xticks(xticks, rotation='vertical')
     else:
         yticks = list(np.arange(0, data.shape[1] + 1, data.shape[1] / nbTicksY))
         deltaFeature0 = featuresBounds[0][1] - featuresBounds[0][0]
-        ax.set_yticklabels([round(float(y / float(data.shape[1]) * deltaFeature0 + featuresBounds[0][0]), 2) for y in yticks], fontsize=22)
+        ax.set_yticklabels([round(float(y / float(data.shape[1]) * deltaFeature0 + featuresBounds[0][0]), 2) for y in yticks], fontsize=18)
         plt.xticks([])
         ax.set_xticklabels([])
     if nbBins[1] == 1:
@@ -164,14 +148,16 @@ def drawGridInAx(data, ax, cmap, featuresBounds, fitnessBounds, aspect="equal", 
     plt.yticks(yticks)
 
     # Draw grid
-    ax.xaxis.set_tick_params(which='minor', direction="in", left=False, bottom=False, top=False, right=False)
-    ax.yaxis.set_tick_params(which='minor', direction="in", left=False, bottom=False, top=False, right=False)
-    ax.set_xticks(np.arange(-.5, data.shape[0], 1), minor=True)
-    ax.set_yticks(np.arange(-.5, data.shape[1], 1), minor=True)
-    #ax.grid(which='minor', color=(0.8,0.8,0.8,0.5), linestyle='-', linewidth=0.1)
+    ax.xaxis.set_tick_params(which='major', direction="in", left=False, bottom=False, top=False, right=False)
+    ax.yaxis.set_tick_params(which='major', direction="in", left=False, bottom=False, top=False, right=False)
 
-    ax.set_xlabel(xlabel, fontsize=25)
-    ax.set_ylabel(ylabel, fontsize=25)
+    ax.set_xticks(np.arange(-.5, data.shape[0], 1), major=True)
+    ax.set_yticks(np.arange(-.5, data.shape[1], 1), major=True)
+
+    ax.grid(which='major', color=(0.8,0.8,0.8,0.5), linestyle='-', linewidth=0.1)
+
+    ax.set_xlabel(xlabel, fontsize=18)
+    ax.set_ylabel(ylabel, fontsize=18)
     ax.autoscale_view()
     return cax
 
@@ -203,7 +189,7 @@ def plotGrid(data, outputFilename, cmap, featuresBounds=[(0., 1.), (0., 1.)], fi
         #cax2 = divider.append_axes("right", size="5%", pad=0.15)
         cax2 = divider.append_axes("right", size=0.5, pad=0.15)
         cbar = fig.colorbar(cax, cax=cax2, format="%.2f")
-        cbar.ax.tick_params(labelsize=22)
+        cbar.ax.tick_params(labelsize=18)
         cbar.ax.set_ylabel(cBarLabel, fontsize=24)
 
     plt.tight_layout()
