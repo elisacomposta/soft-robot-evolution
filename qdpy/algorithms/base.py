@@ -614,6 +614,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                             
                 if self._verify_if_finished_iteration(batch_start_time):
                     batch_start_time = timer()
+            best_per_gen.append(self.best().fitness[0])
 
         if batch_mode:
             budget = self.budget
@@ -641,7 +642,6 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         for fn in self._callbacks.get("finished_optimisation"):
             fn(self, optimisation_elapsed)
         
-        best_per_gen.append(self.best().fitness[0])
         return best_per_gen
 
 
