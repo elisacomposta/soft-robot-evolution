@@ -49,6 +49,7 @@ partial = functools.partial # type: ignore
 default_algorithm_logger: Any
 
 generation = -1
+best_per_gen = []
 
 def _evalWrapper(eval_id: int, fn: Callable, *args, **kwargs) -> Tuple[int, float, Any, Any]:
     """Wrapper around an evaluation function. It catches any exceptions raised by the evaluation function (as exceptions might be lost depending on which kind of parallelism scheme is applied to launch evaluations). It also measures the time elapsed by the evaluation function computation."""
@@ -640,7 +641,8 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         for fn in self._callbacks.get("finished_optimisation"):
             fn(self, optimisation_elapsed)
         
-        return self.best()
+        best_per_gen.append(self.best().fitness[0])
+        return best_per_gen
 
 
     def add_callback(self, event: str, fn: Callable) -> None:

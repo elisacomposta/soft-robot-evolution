@@ -27,6 +27,7 @@ from qdpy.containers import *
 from qdpy.plots import *
 from qdpy.base import *
 from qdpy import tools
+from qd.plot import *
 
 import yaml
 import random
@@ -139,22 +140,25 @@ class QDExperiment(object):
             print("\tDone !")
             #print(grid.summary())
 
+
+        # Create plot of the fitness trend
+        plot_path = os.path.join(self.log_base_path, f"fitnessTrend-{self.instance_name}.pdf")
+        plotTrend(best, plot_path, grid.fitness_domain[0])
+        print("\nA plot of the fitness trend was saved in '%s'." % os.path.abspath(plot_path))
+
         # Create plot of the performance grid
         plot_path = os.path.join(self.log_base_path, f"performancesGrid-{self.instance_name}.pdf")
         quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]
-        
         xlabel = self.features_list[0]
         ylabel = self.features_list[1]
-
+        
         plotGridSubplots(quality, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, grid.fitness_domain[0], xlabel=xlabel, ylabel=ylabel)
-        print("\nA plot of the performance grid was saved in '%s'." % os.path.abspath(plot_path))
+        print("A plot of the performance grid was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the activity grid
         plot_path = os.path.join(self.log_base_path, f"activityGrid-{self.instance_name}.pdf")
         plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, [0, np.max(grid.activity_per_bin)], xlabel=xlabel, ylabel=ylabel)
         print("A plot of the activity grid was saved in '%s'." % os.path.abspath(plot_path))
-
-        #print("All results are available in the '%s' pickle file." % self.logger.final_filename)
 
 
     def _removeTmpFiles(self, fileList):
