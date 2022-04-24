@@ -28,8 +28,6 @@ sys.path.insert(0, root_dir)
 sys.path.insert(1, os.path.join(external_dir, 'pytorch_a2c_ppo_acktr_gail'))
 from ppo import run_ppo
 
-
-
 ###### SIMULATION FUNCTIONS ######
 
 def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
@@ -55,8 +53,9 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
         group.add_job(run_ppo, ppo_args, callback=ind.structure.set_reward)
 
     group.run_jobs(num_cores)
-
+    
     for ind in inds:
+        #ind.structure.reward = np.random.uniform(10.)
         #print("Reward: ", ind.structure.reward)
         ind.structure.compute_fitness()
         ind.fitness.values = [ind.structure.fitness]
@@ -91,6 +90,7 @@ def compute_features(ind, features_list):
     emptiness = compute_emptiness(ind.structure)
     compactness = compute_compactness(ind.structure)
     elongation = compute_elongation(ind.structure, 2)
+    actuation, v_actuation, h_actuation = compute_actuation(ind.structure)
     scores = {
             "reward": ind.structure.fitness,
             "length": length,     
@@ -98,7 +98,10 @@ def compute_features(ind, features_list):
             "baseLength": baseLength,
             "emptiness": emptiness,
             "compactness": compactness,
-            "elongation": elongation    #define domains
+            "elongation": elongation,
+            "actuation": actuation,
+            "verticalActuation": v_actuation,
+            "horizontalActuation": h_actuation
     } 
     ind.features.values = [scores[x] for x in features_list]
 
@@ -180,45 +183,25 @@ def get_env(ind, env_name):
 
 ### FITNESS COMPUTATION FUNCTIONS ###
 def compute_length(structure):
-    start = -1
-    end = -1
-    for i in range (len((structure.body[0]))):
-        for j in range (len((structure.body))):
-            if structure.body[j][i] > 0:
-                start = i
-                break
-        if(start >= 0):
-            break
-    for i in range (len((structure.body))-1, 0, -1):
-        for j in range (len((structure.body[i]))):
-            if structure.body[i][j] > 0:
-                end = i
-                break
-        if(end >= 0):
-            break
-    length = end - start + 1
+    coordinates = []
+    for i in range(structure.shape[0]):
+        for j in range(structure.shape[1]):
+            if structure.body[i][j] != 0:
+                coordinates.append([i, j])
+    
+    minL, maxL = range_y(coordinates)
+    length = maxL - minL + 1
     return length
 
 
 def compute_height(structure):
-    start = -1
-    end = -1
-    for i in range (len((structure.body[0]))):
-        for j in range (len((structure.body))):
-            if structure.body[i][j] > 0:
-                start = i
-                break
-        if(start >= 0):
-            break
-    
-    for i in range (len((structure.body[0]))-1, 0, -1):
-        for j in range (len((structure.body))):
-            if structure.body[i][j] > 0:
-                end = i
-                break
-        if(end >= 0):
-            break
-    height = end - start + 1
+    coordinates = []
+    for i in range(structure.shape[0]):
+        for j in range(structure.shape[1]):
+            if structure.body[i][j] != 0:
+                coordinates.append([i, j])
+    minH, maxH = range_x(coordinates)
+    height = maxH - minH + 1
     return height
 
 
@@ -228,12 +211,20 @@ def compute_base_length(structure):
 
 
 def compute_emptiness(structure):
-    totEmpty=0
-    for i in structure.body:
-        for j in i:
-            totEmpty += 1 if j==0 else 0
-    emptiness = totEmpty/(len(structure.body) * len(structure.body[0]) )
+    emptiness = (structure.body == 0).sum() / (structure.shape[0] * structure.shape[1])
     return emptiness
+
+
+# VOXEL_TYPES = { 'EMPTY': 0, 'RIGID': 1, 'SOFT': 2, 'H_ACT': 3, 'V_ACT': 4, 'FIXED': 5} (see evogym/utils.py)
+def compute_actuation(structure):
+    body = np.asarray(structure.body)
+
+    v_total = (body > 0).sum()
+    v_actuation = (body == 3).sum() / v_total
+    h_actuation = (body == 4).sum() / v_total
+    actuation = v_actuation + h_actuation
+
+    return actuation, v_actuation, h_actuation
 
 
 def compute_compactness(structure):

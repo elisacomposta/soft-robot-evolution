@@ -7,11 +7,14 @@ batch_mode: True
 fitness_type: "reward"
 rewardDomain: [0., 10.]
 
-features_list: ["compactness", "emptiness"]
+features_list: ["actuation", "compactness"]
 lengthDomain: [1, 5]
 heightDomain: [1, 5]
 baseLengthDomain: [0, 5]
 emptinessDomain: [0., 1.]
+actuationDomain: [0., 1.]
+verticalActuationDomain: [0., 1.]
+horizontalActuationDomain: [0., 1.]
 compactnessDomain: [0., 1.]
 elongationDomain: [0., 1.]
 
