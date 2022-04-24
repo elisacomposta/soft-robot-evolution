@@ -12,10 +12,11 @@ from evogym import sample_robot
 from evogym.envs.walk import WalkingFlat, SoftBridge, Duck
 from evogym.envs.climb import Climb0, Climb1, Climb2
 from evogym.envs.flip import Flipping
+from evogym.envs.jump import StationaryJump
 from evogym.envs.balance import Balance, BalanceJump
 from evogym.envs.change_shape import MaximizeShape, MinimizeShape
 from evogym.envs.traverse import StepsUp, StepsDown, WalkingBumpy, WalkingBumpy2, VerticalBarrier, FloatingPlatform, Gaps, BlockSoup
-from evogym.envs.manipulate import CarrySmallRect, CarrySmallRectToTable, PushSmallRect, PushSmallRectOnOppositeSide, ThrowSmallRect, CatchSmallRect
+from evogym.envs.manipulate import CarrySmallRect, CarrySmallRectToTable, PushSmallRect, PushSmallRectOnOppositeSide, ThrowSmallRect, CatchSmallRect, ToppleBeam, SlideBeam, LiftSmallRect
 from utils.algo_utils import Structure, TerminationCondition, mutate
 import utils.mp_group as mp
 from evogym import EvoWorld, EvoSim, EvoViewer
@@ -68,7 +69,7 @@ def make_env(env_name, shape, label, seed=-1, ind=None):
     if ind.structure is None:
         body, conn = sample_robot(shape)
     else:
-        body, conn = mutate(ind.structure.body, shape)
+        body, conn = mutate(ind.structure.body, shape, num_attempts=50)
         if body is None or conn is None:    # mutation failed after num_attempts
             body, conn = sample_robot(shape)
 
@@ -104,81 +105,6 @@ def compute_features(ind, features_list):
             "horizontalActuation": h_actuation
     } 
     ind.features.values = [scores[x] for x in features_list]
-
-
-### GET ENVIRONMENT ###
-def get_env(ind, env_name):
-
-    # walk
-    if env_name == "Walker-v0":
-        env = WalkingFlat(ind.structure.body, ind.structure.connections)        # build env with 'set()' method
-    elif env_name == "BridgeWalker-v0":
-        env = SoftBridge(ind.structure.body, ind.structure.connections)
-    elif env_name == "CaveCrawler-v0":          #non va
-        env = Duck(ind.structure.body, ind.structure.connections)
-    
-    # climb
-    elif env_name == "Climber-v0":
-        env = Climb0(ind.structure.body, ind.structure.connections)
-    elif env_name == "Climber-v1":
-        env = Climb1(ind.structure.body, ind.structure.connections)
-    elif env_name == "Climber-v2":
-        env = Climb2(ind.structure.body, ind.structure.connections) #non va
-    
-    # flip
-    elif env_name == "Flipper-v0":
-        env = Flipping(ind.structure.body, ind.structure.connections)
-    
-    #balance
-    elif env_name == "Balancer-v0":
-        env = Balance(ind.structure.body, ind.structure.connections)
-    elif env_name == "Balancer-v1":
-        env = BalanceJump(ind.structure.body, ind.structure.connections)
-    
-    # change_shape
-    elif env_name == "ShapeChange":
-        env = MaximizeShape(ind.structure.body, ind.structure.connections)  #non va
-    elif env_name == "ShapeChange":
-        env = MinimizeShape(ind.structure.body, ind.structure.connections) #non va
-    # ne mancano altri
-
-    # traverse
-    elif env_name == "UpStepper-v0":
-        env = StepsUp(ind.structure.body, ind.structure.connections)
-    elif env_name == "DownStepper-v0":
-        env = StepsDown(ind.structure.body, ind.structure.connections) #non va
-    elif env_name == "ObstacleTraverser-v0":
-        env = WalkingBumpy(ind.structure.body, ind.structure.connections) #non va
-    elif env_name == "ObstacleTraverser-v1":
-        env = WalkingBumpy2(ind.structure.body, ind.structure.connections) #non va
-    elif env_name == "Hurdler-v0":
-        env = VerticalBarrier(ind.structure.body, ind.structure.connections) #non va
-    elif env_name == "PlatformJumper-v0":
-        env = FloatingPlatform(ind.structure.body, ind.structure.connections) #non va
-    elif env_name == "GapJumper-v0":
-        env = Gaps(ind.structure.body, ind.structure.connections) #non va
-    elif env_name == "Traverser-v0":
-        env = BlockSoup(ind.structure.body, ind.structure.connections)
-    
-    # manipulate
-    elif env_name == "Carrier-v0":
-        env = CarrySmallRect(ind.structure.body, ind.structure.connections) #no
-    elif env_name == "Carrier-v1":
-        env = CarrySmallRectToTable(ind.structure.body, ind.structure.connections) #no
-    elif env_name == "Pusher-v0":
-        env = PushSmallRect(ind.structure.body, ind.structure.connections)
-    elif env_name == "Pusher-v1":
-        env = PushSmallRectOnOppositeSide(ind.structure.body, ind.structure.connections)
-    elif env_name == "Thrower-v0":
-        env = ThrowSmallRect(ind.structure.body, ind.structure.connections) #no
-    elif env_name == "Walker-v0":   # non entra mai
-        env = CatchSmallRect(ind.structure.body, ind.structure.connections)
-    # ne mancano altri
-
-    else:
-        print("ERROR: invalid env name")
-        env = None
-    return env
 
 
 ### FITNESS COMPUTATION FUNCTIONS ###
@@ -301,3 +227,89 @@ def range_y(coordinates):
     min_y = coordinates[sorted[0],:][1]
     max_y = coordinates[sorted[-1],:][1]
     return min_y, max_y
+
+
+
+### GET ENVIRONMENT ###
+def get_env(ind, env_name):
+
+    # walk
+    if env_name == "Walker-v0":                 # easy
+        env = WalkingFlat(ind.structure.body, ind.structure.connections)        # build env with 'set()' method
+    elif env_name == "BridgeWalker-v0":         # easy
+        env = SoftBridge(ind.structure.body, ind.structure.connections)
+    elif env_name == "CaveCrawler-v0":          # medium
+        env = Duck(ind.structure.body, ind.structure.connections)
+    
+    # climb
+    elif env_name == "Climber-v0":              # medium
+        env = Climb0(ind.structure.body, ind.structure.connections)
+    elif env_name == "Climber-v1":              # medium
+        env = Climb1(ind.structure.body, ind.structure.connections)
+    elif env_name == "Climber-v2":              # hard
+        env = Climb2(ind.structure.body, ind.structure.connections)
+    
+    # flip
+    elif env_name == "Flipper-v0":              # easy
+        env = Flipping(ind.structure.body, ind.structure.connections)
+    
+    # jump
+    elif env_name == "Jumper-v0":               # easy
+        env = StationaryJump(ind.structure.body, ind.structure.connections)
+
+    # balance
+    elif env_name == "Balancer-v0":             # easy
+        env = Balance(ind.structure.body, ind.structure.connections)
+    elif env_name == "Balancer-v1":             # medium
+        env = BalanceJump(ind.structure.body, ind.structure.connections)
+
+    # traverse
+    elif env_name == "UpStepper-v0":            # medium
+        env = StepsUp(ind.structure.body, ind.structure.connections)
+    elif env_name == "DownStepper-v0":          # easy
+        env = StepsDown(ind.structure.body, ind.structure.connections)
+    elif env_name == "ObstacleTraverser-v0":    # medium
+        env = WalkingBumpy(ind.structure.body, ind.structure.connections)
+    elif env_name == "ObstacleTraverser-v1":    # hard
+        env = WalkingBumpy2(ind.structure.body, ind.structure.connections)
+    elif env_name == "Hurdler-v0":              # hard
+        env = VerticalBarrier(ind.structure.body, ind.structure.connections)
+    elif env_name == "PlatformJumper-v0":       # hard
+        env = FloatingPlatform(ind.structure.body, ind.structure.connections)
+    elif env_name == "GapJumper-v0":            # hard
+        env = Gaps(ind.structure.body, ind.structure.connections)
+    elif env_name == "Traverser-v0":            # hard
+        env = BlockSoup(ind.structure.body, ind.structure.connections)
+    
+    # manipulate
+    elif env_name == "Carrier-v0":              # easy
+        env = CarrySmallRect(ind.structure.body, ind.structure.connections)
+    elif env_name == "Carrier-v1":              # hard
+        env = CarrySmallRectToTable(ind.structure.body, ind.structure.connections)
+    elif env_name == "Pusher-v0":               # easy
+        env = PushSmallRect(ind.structure.body, ind.structure.connections)
+    elif env_name == "Pusher-v1":               # medium
+        env = PushSmallRectOnOppositeSide(ind.structure.body, ind.structure.connections)
+    elif env_name == "Thrower-v0":              # medium
+        env = ThrowSmallRect(ind.structure.body, ind.structure.connections)
+    elif env_name == "BeamToppler-v0":          # easy
+        env = ToppleBeam(ind.structure.body, ind.structure.connections)
+    elif env_name == "BeamSlider-v0":           # hard
+        env = SlideBeam(ind.structure.body, ind.structure.connections)
+    elif env_name == "Lifter-v0":               # hard
+        env = LiftSmallRect(ind.structure.body, ind.structure.connections)
+    elif env_name == "Catcher-v0":              # hard
+        env = CatchSmallRect(ind.structure.body, ind.structure.connections)
+    
+    # change_shape - ERRORS
+    elif env_name == "ShapeChange":
+        env = MaximizeShape(ind.structure.body, ind.structure.connections)
+    elif env_name == "ShapeChange":
+        env = MinimizeShape(ind.structure.body, ind.structure.connections)
+    # ne mancano altri
+
+    else:
+        print("ERROR: invalid env name")
+        env = None
+    return env
+
