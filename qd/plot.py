@@ -18,8 +18,8 @@ def plotTrend(best_fitness, fileName, fitnessDomain = None):
     if fitnessDomain is None:
         yticks = np.arange(fitnessDomain[0], fitnessDomain[1]).round(2)
     else:
-        if y[-1] != 0:
-            stepy = ( y[-1] - y[0] ) / 7.
+        stepy = ( y[-1] - y[0] ) / 7.
+        if stepy != 0:
             yticks = np.arange(y[0], y[-1] + stepy, stepy).round(2)
         else:
             yticks = y
