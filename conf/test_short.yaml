@@ -1,13 +1,13 @@
 seed: 32
 indv_eps: 5       # episodes per individual
 env_name: 'Walker-v0'
-shape: [5, 5]
+#shape: [5, 5]
 batch_mode: True
 
 fitness_type: "reward"
 rewardDomain: [0., 10.]
 
-features_list: ["actuation", "compactness"]
+features_list: ["emptiness", "actuation"]
 lengthDomain: [1, 5]
 heightDomain: [1, 5]
 baseLengthDomain: [0, 5]
@@ -31,19 +31,18 @@ main_algorithm_name: algoTotal
 algorithms:
     # Default parameter values for each algorithm
     optimisation_task: max            # maximisation of all fitness objectives
-    dimension: 2804                   # The number of dimensions of the problem
-    ind_domain: [0., 1.]              # The domain of each value of the genome (optional)
     container: cont0                  # The container to use to store individuals told to the optimisers
+    shape: [5, 5]
 
-    # first explore the feature landscape by random search
+    # explore the feature landscape by random search
     algoInit:
-        type: RandomUniform 
-        budget: 100        # The total number of allowed evaluations
+        type: Random
+        budget: 10        # The total number of allowed evaluations
 
     algoQD:
-        type: RandomSearchMutPolyBounded    # In realtà viene applicata la mutazione proposta da evogym (algo_utils.py)
-        budget: 100                           # The total number of allowed evaluations
-        batch_size: 28
+        type: Mutation   # algo_utils.py
+        budget: 10                           # The total number of allowed evaluations
+        batch_size: 1
     
     # All described algorithms are placed in a Sequence (Sq) of algorithms to execute them one after the other
     algoTotal:

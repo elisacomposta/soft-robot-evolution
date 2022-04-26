@@ -23,16 +23,12 @@ class EvoGymExperiment(QDExperiment):
     def reinit(self):
         super().reinit()
         self.env_name = self.config['env_name']
-        self.shape = self.config['shape']
-        self.label = 0
+        self.shape = self.config['algorithms']['shape']
 
     def eval_fn(self, individuals):
         for ind in individuals:
-            self.label += 1
             env = make_env(
                 env_name = self.env_name,
-                shape = self.shape,
-                label = self.label,
                 ind=ind)
             compute_features(ind, self.features_list)
 

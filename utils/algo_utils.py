@@ -1,10 +1,11 @@
 import math
 from os import name
 from evogym import is_connected, has_actuator, get_full_connectivity, draw, get_uniform
+import random
 
 class Structure():
 
-    def __init__(self, body, connections, label, generation, shape):
+    def __init__(self, body, connections, label=-1, generation = -1, shape = [-1, -1]):
         self.body = body
         self.connections = connections
         self.shape = shape
@@ -46,23 +47,33 @@ class TerminationCondition():
         self.max_iters = max_iters
 
 def mutate(child, shape, mutation_rate=0.1, num_attempts=10):
-    pd = get_uniform(5)  
+    pd = get_uniform(5)  # probability of sampling each element
     pd[0] = 0.6 #it is 3X more likely for a cell to become empty
-
     # iterate until valid robot found
     for n in range(num_attempts):
+        mutated = False
         # for every cell there is mutation_rate% chance of mutation
         for i in range(shape[0]):
             for j in range(shape[1]):
                 mutation = [mutation_rate, 1-mutation_rate]
                 if draw(mutation) == 0: # mutation
-                    child[i][j] = draw(pd)
-        
-        if is_connected(child) and has_actuator(child):
+                    mutated = True
+                    child[i][j] = draw(pd) 
+        if is_connected(child) and has_actuator(child) and mutated:
+            #print("Successful mutation")
             return (child, get_full_connectivity(child))
 
-    # no valid robot found after num_attempts
-    return None, None
+    # Force mutation of one voxel only (mutation failed after num_attempts)
+    for n in range(num_attempts):
+        i = random.randrange(shape[0])
+        j = random.randrange(shape[1])
+        child[i][j] = draw(pd)
+        if is_connected(child) and has_actuator(child):
+            #print("Mutation forced")
+            return (child, get_full_connectivity(child))
+
+    #print("Mutation failed")
+    return None, None # no valid robot found
 
 def get_percent_survival(gen, max_gen):
     low = 0.0

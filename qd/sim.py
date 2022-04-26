@@ -57,27 +57,17 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
     
     for ind in inds:
         #ind.structure.reward = np.random.uniform(10.)
-        #print("Reward: ", ind.structure.reward)
+        #print(ind.structure.body)
+        #print("Reward: ", ind.structure.reward, "")
         ind.structure.compute_fitness()
         ind.fitness.values = [ind.structure.fitness]
 
 
-def make_env(env_name, shape, label, seed=-1, ind=None):
+def make_env(env_name, seed=-1, ind=None):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-
-    if ind.structure is None:
-        body, conn = sample_robot(shape)
-    else:
-        body, conn = mutate(ind.structure.body, shape, num_attempts=50)
-        if body is None or conn is None:    # mutation failed after num_attempts
-            body, conn = sample_robot(shape)
-
-    structure = Structure(body, conn, label, ind.generation, shape)
-    ind.structure = structure
-
-    env = get_env(ind, env_name)
         
+    env = get_env(ind, env_name)
     if (seed >= 0):
         env.seed(seed)
 

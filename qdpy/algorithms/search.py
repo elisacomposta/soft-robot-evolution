@@ -31,6 +31,23 @@ from qdpy import tools
 
 import qdpy.hdsobol as hdsobol
 
+from evogym import sample_robot
+
+@registry.register
+class Random(QDAlgorithm):
+    """ generate random structures """
+    shape: np.array
+
+    def __init__(self, container: Container, budget: int, shape, **kwargs):
+        super().__init__(container, budget, **kwargs)
+        self.shape = shape
+
+    def _internal_ask(self, base_ind: IndividualLike) -> IndividualLike:
+        body, conn = sample_robot(self.shape)
+        structure = Structure(body, conn, shape=self.shape)
+        base_ind.structure = structure
+        return base_ind
+
 
 @registry.register
 class RandomUniform(QDAlgorithm):
@@ -47,10 +64,7 @@ class RandomUniform(QDAlgorithm):
     def _internal_ask(self, base_ind: IndividualLike) -> IndividualLike:
         #base_ind[:] = np.random.uniform(self.ind_domain[0], self.ind_domain[1], size=self.dimension)
         base_ind[:] = [random.uniform(self.ind_domain[0], self.ind_domain[1]) for _ in range(self.dimension)]
-
-        # base_ind.structure is None => will generate random structure
         return base_ind
-
 
 
 @registry.register

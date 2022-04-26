@@ -15,7 +15,7 @@
 
 """A collection of all algorithms based on Evolutionary algorithms."""
 
-__all__ = ["Evolution", "RandomSearchMutPolyBounded", "MutPolyBounded", "RandomSearchMutGaussian", "MutGaussian", "CMAES"]
+__all__ = ["Evolution", "Mutation", "RandomSearchMutPolyBounded", "MutPolyBounded", "RandomSearchMutGaussian", "MutGaussian", "CMAES"]
 
 ########### IMPORTS ########### {{{1
 
@@ -36,6 +36,9 @@ from qdpy.phenotype import *
 from qdpy.base import *
 from qdpy.containers import *
 from qdpy import tools
+
+from utils.algo_utils import Structure, mutate
+from evogym import sample_robot
 
 ## no mutation applied in Evolution class (will mutate in qd/sim.py)
 
@@ -106,8 +109,7 @@ class Evolution(QDAlgorithm):
         
         # Vary the suggestion
         if perform_variation:
-            #varied = self._vary_fn(selected) # type: ignore             ### mutation
-            varied = selected
+            varied = self._vary_fn(selected)    #apply mutation
             if not isinstance(varied, IndividualLike):
                 if is_iterable(varied) and isinstance(varied[0], IndividualLike):
                     varied = varied[0]
@@ -132,32 +134,23 @@ class Evolution(QDAlgorithm):
             self._tell_fn(individual, added_to_container)
 
 
-"""@registry.register
+@registry.register
 class Mutation(Evolution):
-    sel_pb: float
-    init_pb: float
-    mut_pb: float
-    eta: float
+    """ apply mutation defined in algo_utils.py """
 
-    def __init__(self, container: Container, budget: int,
-            sel_pb: float = 0.5, init_pb: float = 0.5,
-            **kwargs):
-        self.sel_pb = sel_pb
-        self.init_pb = init_pb
-
-        def init_fn(base_ind):
-            return base_ind
-        select_or_initialise = partial(tools.sel_or_init,
-                sel_fn = tools.sel_random,
-                sel_pb = sel_pb,
-                init_fn = init_fn,
-                init_pb = init_pb)
-        def vary(ind):
+    def __init__(self, container: Container, budget: int, **kwargs):
+        select = tools.sel_random
+        def vary(ind): #perform mutation
+            #print("\nMutating ind\n", ind.structure.body)
+            body, conn = mutate(ind.structure.body, ind.structure.shape, num_attempts=10)
+            if body is None or conn is None:    # mutation failed after num_attempts
+                body, conn = sample_robot(ind.structure.shape)
+            structure = Structure(body, conn, shape = ind.structure.shape)
+            ind.structure = structure
             return ind
 
-        super().__init__(container, budget, # type: ignore
-                select_or_initialise=select_or_initialise, vary=vary, **kwargs) # type: ignore
-"""
+        super().__init__(container, budget, select=select, vary=vary, **kwargs)
+
 
 @registry.register
 class RandomSearchMutPolyBounded(Evolution):

@@ -49,6 +49,7 @@ partial = functools.partial # type: ignore
 default_algorithm_logger: Any
 
 generation = -1
+label = 0
 best_per_gen = []
 
 def _evalWrapper(eval_id: int, fn: Callable, *args, **kwargs) -> Tuple[int, float, Any, Any]:
@@ -601,6 +602,12 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     for _ in range(nb_suggestions):
                         eval_id = remaining_evals
                         ind: IndividualLike = self.ask()
+
+                        global label
+                        label += 1
+                        ind.structure.label = label
+                        ind.structure.generation = generation
+
                         individuals[eval_id] = ind
                         inds.append(ind)
                         remaining_evals -= 1
@@ -641,7 +648,6 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         optimisation_elapsed: float = timer() - optimisation_start_time
         for fn in self._callbacks.get("finished_optimisation"):
             fn(self, optimisation_elapsed)
-        
         return best_per_gen
 
 
