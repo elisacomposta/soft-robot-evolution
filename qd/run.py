@@ -18,27 +18,55 @@ sys.path.insert(1, os.path.join(external_dir, 'pytorch_a2c_ppo_acktr_gail'))
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.join(curr_dir, '..')
 
+from utils.algo_utils import Structure, EvaluationMap
+tmp = Structure(None, None)
 
 class EvoGymExperiment(QDExperiment):
     def reinit(self):
         super().reinit()
         self.env_name = self.config['env_name']
         self.shape = self.config['algorithms']['shape']
+        self.history = EvaluationMap()
 
     def eval_fn(self, individuals):
+        evaluate = []
+        
         for ind in individuals:
-            env = make_env(
-                env_name = self.env_name,
-                ind=ind)
+            #self.history.history_print()
+
+            """force ind 4 = ind 1 (structure) for testing"""
+            global tmp                  
+            if ind.structure.label == 1:
+                tmp = ind.structure
+            if ind.structure.label == 200:
+                ind.structure.body = tmp.body
+                ind.structure.connections = tmp.connections
+            
+            # if in map -> copy fitness and continue with the next
+            # else -> evaluate and save in the map
+            
             compute_features(ind, self.features_list)
 
-        simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
+            if self.history.get_evaluation(ind) is None:
+                env = make_env(
+                    env_name = self.env_name,
+                    ind=ind)
+                evaluate.append(ind)
+            else:
+                print(f"Skipping training ind {ind.structure.label}... structure already evaluated")
+                #print(ind.structure.body)
+                #print("Features: ", ind.features)
+                #print("Reward: ", ind.structure.reward)
+        
+        evaluated = simulate(self.env_name, evaluate, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
+        self.history.add(evaluated)
 
+        #self.history.history_print()
         ## STORE RESULTS
         output_path = os.path.join(root_dir, "results", self.experiment_name)
-        store_results(path=output_path, individuals=individuals)
+        store_results(path=output_path, individuals=evaluated)
 
-        return individuals
+        return evaluated    # returns only new evaluation
 
 
 ##### BASE FUNCTIONS ######

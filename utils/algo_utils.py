@@ -35,6 +35,7 @@ class Structure():
     def __repr__(self):
         return self.__str__()
 
+
 class TerminationCondition():
 
     def __init__(self, max_iters):
@@ -45,6 +46,7 @@ class TerminationCondition():
 
     def change_target(self, max_iters):
         self.max_iters = max_iters
+
 
 def mutate(child, shape, mutation_rate=0.1, num_attempts=10):
     pd = get_uniform(5)  # probability of sampling each element
@@ -75,125 +77,34 @@ def mutate(child, shape, mutation_rate=0.1, num_attempts=10):
     #print("Mutation failed")
     return None, None # no valid robot found
 
-def get_percent_survival(gen, max_gen):
-    low = 0.0
-    high = 0.8
-    return ((max_gen-gen-1)/(max_gen-1))**1.5 * (high-low) + low
+class EvaluationMap():
+    history = {}
 
-def total_robots_explored(pop_size, max_gen):
-    total = pop_size
-    for i in range(1, max_gen):
-        total += pop_size - max(2, math.ceil(pop_size * get_percent_survival(i-1, max_gen))) 
-    return total
+    def init(self):
+        self.history = {}
 
-def total_robots_explored_breakpoints(pop_size, max_gen, max_evaluations):
-    
-    total = pop_size
-    out = []
-    out.append(total)
-
-    for i in range(1, max_gen):
-        total += pop_size - max(2, math.ceil(pop_size * get_percent_survival(i-1, max_gen))) 
-        if total > max_evaluations:
-            total = max_evaluations
-        out.append(total)
-
-    return out
-
-def search_max_gen_target(pop_size, evaluations):
-    target = 0
-    while total_robots_explored(pop_size, target) < evaluations:
-        target += 1
-    return target
-    
-
-
-def parse_range(str_inp, rbt_max):
-    
-    inp_with_spaces = ""
-    out = []
-    
-    for token in str_inp:
-        if token == "-":
-            inp_with_spaces += " " + token + " "
+    def get_evaluation(self, ind):
+        hash = ind.structure.body.data.tobytes()
+        fitness = self.history.get(hash)
+        if fitness is None:
+            return None
         else:
-            inp_with_spaces += token
-    
-    tokens = inp_with_spaces.split()
+            ind.set_fitness(fitness)
+            return fitness
 
-    count = 0
-    while count < len(tokens):
-        if (count+1) < len(tokens) and tokens[count].isnumeric() and tokens[count+1] == "-":
-            curr = tokens[count]
-            last = rbt_max
-            if (count+2) < len(tokens) and tokens[count+2].isnumeric():
-                last = tokens[count+2]
-            for i in range (int(curr), int(last)+1):
-                out.append(i)
-            count += 3
-        else:
-            if tokens[count].isnumeric():
-                out.append(int(tokens[count]))
+    def add(self, individuals):
+        for ind in individuals:
+            hash = ind.structure.body.data.tobytes()
+            fitness = ind.structure.fitness
+            if self.get_evaluation(ind) is None:
+                self.history[hash] = fitness
+            else:
+                assert(self.history[hash] == fitness)
+
+    def history_print(self):
+        print("\nHistory: ", len(self.history), " elements")
+        count = 1
+        for i in self.history:
+            print("el", count, ": ", self.history[i])
             count += 1
-    return out
-
-def pretty_print(list_org, max_name_length=30):
-
-    list_formatted = []
-    for i in range(len(list_org)//4 +1):
-        list_formatted.append([])
-
-    for i in range(len(list_org)):
-        row = i%(len(list_org)//4 +1)
-        list_formatted[row].append(list_org[i])
-
-    print()
-    for row in list_formatted:
-        out = ""
-        for el in row:
-            out += str(el) + " "*(max_name_length - len(str(el)))
-        print(out)
-
-def get_percent_survival_evals(curr_eval, max_evals):
-    low = 0.0
-    high = 0.6
-    return ((max_evals-curr_eval-1)/(max_evals-1)) * (high-low) + low
-
-def total_robots_explored_breakpoints_evals(pop_size, max_evals):
-    
-    num_evals = pop_size
-    out = []
-    out.append(num_evals)
-    while num_evals < max_evals:
-        num_survivors = max(2,  math.ceil(pop_size*get_percent_survival_evals(num_evals, max_evals)))
-        new_robots = pop_size - num_survivors
-        num_evals += new_robots
-        if num_evals > max_evals:
-            num_evals = max_evals
-        out.append(num_evals)
-
-    return out
-
-if __name__ == "__main__":
-
-    pop_size = 25
-    num_evals = pop_size
-    max_evals = 750
-
-    count = 1
-    print(num_evals, num_evals, count)
-    while num_evals < max_evals:
-        num_survivors = max(2,  math.ceil(pop_size*get_percent_survival_evals(num_evals, max_evals)))
-        new_robots = pop_size - num_survivors
-        num_evals += new_robots
-        count += 1
-        print(new_robots, num_evals, count)
-
-    print(total_robots_explored_breakpoints_evals(pop_size, max_evals))
-        
-    # target = search_max_gen_target(25, 500)
-    # print(target)
-    # print(total_robots_explored(25, target-1))
-    # print(total_robots_explored(25, target))
-
-    # print(total_robots_explored_breakpoints(25, target, 500))
+        print()
