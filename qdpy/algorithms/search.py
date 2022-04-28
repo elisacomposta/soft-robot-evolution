@@ -43,6 +43,7 @@ class Random(QDAlgorithm):
         self.shape = shape
 
     def _internal_ask(self, base_ind: IndividualLike) -> IndividualLike:
+        base_ind[:] = [random.uniform(0, 1) for _ in range(1)]  # needed to correctly save individuals in the container
         body, conn = sample_robot(self.shape)
         structure = Structure(body, conn, shape=self.shape)
         base_ind.structure = structure
