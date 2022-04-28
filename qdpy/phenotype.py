@@ -348,6 +348,10 @@ class Individual(list, IndividualLike):
         """Return true if ``self`` dominates ``other``. """
         return self.fitness.dominates(other.fitness)
 
+    def set_fitness(self, fitness):
+        self.structure.set_reward(fitness)
+        self.fitness.values = [self.structure.fitness]
+
     def reset(self) -> None:
         self.fitness.reset()
         self.features.reset()
