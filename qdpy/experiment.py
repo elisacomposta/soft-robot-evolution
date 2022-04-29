@@ -128,7 +128,11 @@ class QDExperiment(object):
     def run(self):
         # Run illumination process !
         with ParallelismManager(self.parallelism_type) as pMgr:
-            best = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
+            try:
+                history = self.history
+            except:
+                history = None
+            best = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, evaluation_history=history) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
 
         # Save results
         if isinstance(self.container, Grid):

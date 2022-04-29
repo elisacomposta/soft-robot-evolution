@@ -19,7 +19,6 @@ curr_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.join(curr_dir, '..')
 
 from utils.algo_utils import Structure, EvaluationMap
-tmp = Structure(None, None)
 
 class EvoGymExperiment(QDExperiment):
     def reinit(self):
@@ -28,45 +27,20 @@ class EvoGymExperiment(QDExperiment):
         self.shape = self.config['algorithms']['shape']
         self.history = EvaluationMap()
 
-    def eval_fn(self, individuals):
-        evaluate = []
+    def eval_fn(self, individuals, already_evaluated = False):
         
         for ind in individuals:
-            #self.history.history_print()
-
-            """force ind 4 = ind 1 (structure) for testing"""
-            global tmp                  
-            if ind.structure.label == 1:
-                tmp = ind.structure
-            if ind.structure.label == 200:
-                ind.structure.body = tmp.body
-                ind.structure.connections = tmp.connections
-            
-            # if in map -> copy fitness and continue with the next
-            # else -> evaluate and save in the map
-            
             compute_features(ind, self.features_list)
+            make_env(env_name = self.env_name, ind=ind)
 
-            if self.history.get_evaluation(ind) is None:
-                env = make_env(
-                    env_name = self.env_name,
-                    ind=ind)
-                evaluate.append(ind)
-            else:
-                print(f"Skipping training ind {ind.structure.label}... structure already evaluated")
-                #print(ind.structure.body)
-                #print("Features: ", ind.features)
-                #print("Reward: ", ind.structure.reward)
-        
-        evaluated = simulate(self.env_name, evaluate, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
-        self.history.add(evaluated)
+        if not already_evaluated:
+            simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
+            self.history.add(individuals)
 
-        #self.history.history_print()
         ## STORE RESULTS
         output_path = os.path.join(root_dir, "results", self.experiment_name)
-        store_results(path=output_path, individuals=evaluated)
-
-        return evaluated    # returns only new evaluation
+        store_results(path=output_path, individuals=individuals)
+        return individuals
 
 
 ##### BASE FUNCTIONS ######
@@ -112,7 +86,7 @@ def store_results(path, individuals):
     test_path = os.path.join(path, "results.csv")
     f_csv = open(test_path, "a")
     for ind in individuals:
-        f_csv.write(f"ind{ind.structure.label};generation{ind.generation};{ind.features};{ind.fitness[0]}\n")
+        f_csv.write(f"ind{ind.structure.label};generation{ind.structure.generation};{ind.features};{ind.fitness[0]}\n")
     f_csv.close()
 
 

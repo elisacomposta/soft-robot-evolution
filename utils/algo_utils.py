@@ -101,10 +101,10 @@ class EvaluationMap():
             else:
                 assert(self.history[hash] == fitness)
 
-    def history_print(self):
-        print("\nHistory: ", len(self.history), " elements")
+    def pretty_print(self):
+        print("\n", len(self.history), " evaluations stored")
         count = 1
         for i in self.history:
-            print("el", count, ": ", self.history[i])
+            print("eval ", count, ": ", self.history[i])
             count += 1
         print()

@@ -46,6 +46,8 @@ from qdpy import tools
 import functools
 partial = functools.partial # type: ignore
 
+from utils.algo_utils import EvaluationMap
+
 default_algorithm_logger: Any
 
 generation = -1
@@ -394,7 +396,11 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         # Call callback functions
         for fn in self._callbacks.get("ask"):
             fn(self, suggestion)
-        suggestion.generation = generation      # keep track of generation 
+
+        global label
+        label += 1
+        suggestion.structure.label = label
+        suggestion.structure.generation = generation
         return suggestion
 
 
@@ -449,7 +455,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                 ind.features.values = features
         if elapsed is not None:
             ind.elapsed = elapsed
-        ind.structure = individual.structure      # tell and save structure (aggiunto)
+        ind.structure = individual.structure      # tell and save structure
         xattr: Mapping[str, Any]
         allowed_to_tell: bool
         xattr, allowed_to_tell = self._tell_before_container_update(ind)
@@ -546,12 +552,13 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
             batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            send_several_suggestions_to_fn: bool = False) -> IndividualLike:
+            send_several_suggestions_to_fn: bool = False, evaluation_history:EvaluationMap = None) -> IndividualLike:
         """optimization process"""
         
         global generation
         generation += 1
         print("\n*** Optimizing... generation_" + str(generation))
+        self._nb_evaluations = 0
 
         optimisation_start_time: float = timer()
         # Init budget
@@ -569,7 +576,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
             batch_start_time: float = timer()
             futures: MutableMapping[int, FutureLike] = {}
             individuals: MutableMapping[int, Union[IndividualLike, Sequence[IndividualLike]]] = {}
-            while remaining_evals > 0 or len(futures) > 0:
+            while self.nb_evaluations < self.budget and remaining_evals > 0  or len(futures) > 0:
                 # Update budget
                 new_budget = budget_fn()
                 if new_budget > budget:
@@ -578,7 +585,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     remaining_evals = max(0, remaining_evals - (budget - new_budget))
                 budget = new_budget
 
-                nb_suggestions = min(remaining_evals, self.batch_size - len(futures))
+                nb_suggestions = min(remaining_evals, self.batch_size - len(futures), self.budget - self.nb_evaluations)
                 if send_several_suggestions_to_fn:
                     # Launch evals on suggestions
                     eval_id: int = remaining_evals
@@ -599,20 +606,30 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                 else:
                     # Launch evals on suggestions
                     inds = []
+                    evaluated_inds = []
                     for _ in range(nb_suggestions):
-                        eval_id = remaining_evals
                         ind: IndividualLike = self.ask()
 
-                        global label
-                        label += 1
-                        ind.structure.label = label
-                        ind.structure.generation = generation
+                        fitness = evaluation_history.get_evaluation(ind)
+                        while fitness is not None and (self.nb_evaluations + len(inds)) < self.budget:  # avoid duplicated evaluations
+                            ind.set_fitness(fitness)
+                            self._nb_evaluations += 1
+                            evaluated_inds.append(ind)
+                            print(f"Skipping training ind {ind.structure.label}... structure already evaluated. Fitness:", ind.fitness[0])
+                            ind: IndividualLike = self.ask()
+                            fitness = evaluation_history.get_evaluation(ind)
 
-                        individuals[eval_id] = ind
+                        if not (self.nb_evaluations + len(inds)) < self.budget:     # end of generation
+                            break
+                            
                         inds.append(ind)
                         remaining_evals -= 1
+                        if remaining_evals <= 0:    # end of batch
+                            break
 
-                    inds = evaluate(inds)
+                    inds = evaluate(inds)   # evaluate new individuals
+                    evaluate(evaluated_inds, already_evaluated=True) # compute and store info of duplicated individuals
+
                     for ind in inds:
                         if isinstance(ind, IndividualLike):
                             self.tell(ind)
@@ -626,19 +643,10 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         if batch_mode:
             budget = self.budget
             remaining_evals: int = budget
-            new_budget: int
             while remaining_evals > 0:
                 budget_iteration: int = min(remaining_evals, self.batch_size)
                 optimisation_loop(lambda: budget_iteration)
-                remaining_evals -= budget_iteration
-
-                # Update budget
-                new_budget = self.budget
-                if new_budget > budget:
-                    remaining_evals += new_budget - budget
-                elif budget > new_budget:
-                    remaining_evals = max(0, remaining_evals - (budget - new_budget))
-                budget = new_budget
+                remaining_evals = self.budget - self.nb_evaluations
 
         else:
             def ret_budget():
@@ -953,10 +961,10 @@ class Sq(QDAlgorithmLike, Summarisable, Saveable, Copyable, CreatableFromConfig)
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
             batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            send_several_suggestions_to_fn: bool = False) -> IndividualLike:
+            send_several_suggestions_to_fn: bool = False, evaluation_history = None) -> IndividualLike:
         for _ in range(self.current_idx, len(self.algorithms)):
             try:
-                res = self.current.optimise(evaluate, budget, batch_mode, executor, send_several_suggestions_to_fn)
+                res = self.current.optimise(evaluate, budget, batch_mode, executor, send_several_suggestions_to_fn, evaluation_history=evaluation_history)
             except Exception as e:
                 warnings.warn(f"Optimisation failed with algorithm '{self.current.name}': {e}")
                 traceback.print_exc()
