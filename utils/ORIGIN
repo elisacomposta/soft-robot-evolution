@@ -1,4 +1,7 @@
 Derived from https://github.com/EvolutionGym/evogym/tree/main/examples/utils
 
 Changes:
- - algo_utils.py: structure also saves shape, generation
+ - algo_utils.py:
+     - structure also saves shape, generation
+     - force mutation if failed
+     - add EvaluationMap to keep track of evaluation history and avoid re-evaluation

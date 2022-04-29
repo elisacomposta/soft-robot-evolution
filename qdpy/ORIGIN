@@ -1,10 +1,14 @@
 Derived from https://gitlab.com/leo.cazenille/qdpy
 
 Changes:
- - phenotype.py: add structure to class Individual
- - experiment.py: don't save final.p, don't show summary, set labels
+ - phenotype.py: add structure to class Individual, set fitness
+ - experiment.py: don't save final.p, don't show summary, set labels, track evolution history, save fitness trend
  - plots.py: ignore warnings (due to version compatibility)
  - algorithms/base.py: 
-      - keep track of generation (in ask, optimize)
+      - keep track of generation (in ask, optimise)
       - consider robot structure (in tell)
-      - start evaluation of the whole generation (in optimize)
+      - start evaluation of the whole generation (in optimise)
+      - set asked individuals' labels (in ask)
+      - avoid duplicated evaluations (in optimise)
+ - algoritms/evolution.py: add structure mutation
+ - algorithms/search.py: add random structure
