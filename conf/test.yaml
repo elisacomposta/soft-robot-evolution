@@ -26,25 +26,22 @@ containers:
 
 main_algorithm_name: algoTotal
 
-# The list of all algorithms
 algorithms:
     # Default parameter values for each algorithm
-    optimisation_task: max            # maximisation of all fitness objectives
-    container: cont0                  # The container to use to store individuals told to the optimisers
-    shape: [5, 5]
+    optimisation_task: max              # maximisation of all fitness objectives
+    container: cont0                    # container to use to store individuals told to the optimisers
+    shape: [5, 5]                       # shape of individual body
 
-    # first explore the feature landscape by random search
     algoInit:
-        type: Random 
-        budget: 1000        # The total number of allowed evaluations
+        type: Random
+        budget: 500                     # The total number of allowed evaluations
 
     algoQD:
-        type: Mutation    # algo_utils.py
-        budget: 500                           # The total number of allowed evaluations
+        type: Mutation
+        budget: 1000                     # The total number of allowed evaluations
         batch_size: 28
     
-    # All described algorithms are placed in a Sequence (Sq) of algorithms to execute them one after the other
     algoTotal:
-        type: Sq
-        algorithms: ['algoInit', 'algoQD'] # The list of algorithms to execute
+        type: Sq                        # Sequence (Sq) of algorithms to execute them one after the other
+        algorithms: ['algoInit', 'algoQD']
         tell_container_when_switching: only_best
