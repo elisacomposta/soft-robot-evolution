@@ -34,7 +34,7 @@ import qdpy.hdsobol as hdsobol
 from evogym import sample_robot
 
 @registry.register
-class RandomStructure(QDAlgorithm):
+class Random(QDAlgorithm):
     """ generate random structures """
     shape: np.array
 
