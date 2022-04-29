@@ -135,13 +135,12 @@ class Evolution(QDAlgorithm):
 
 
 @registry.register
-class StructureMutation(Evolution):
+class Mutation(Evolution):
     """ apply mutation defined in algo_utils.py """
 
     def __init__(self, container: Container, budget: int, **kwargs):
         select = tools.sel_random
         def vary(ind: IndividualLike): #perform mutation
-            #print("\nMutating ind\n", ind.structure.body)
             ind[:] = [random.uniform(0, 1)]  # needed to correctly save individuals in the container
             body, conn = mutate(ind.structure.body, ind.structure.shape, num_attempts=10)
             if body is None or conn is None:    # mutation failed after num_attempts
