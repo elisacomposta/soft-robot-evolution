@@ -132,7 +132,7 @@ class QDExperiment(object):
                 history = self.history
             except:
                 history = None
-            best = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, evaluation_history=history) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
+            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, evaluation_history=history) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
 
         # Save results
         if isinstance(self.container, Grid):
@@ -145,27 +145,30 @@ class QDExperiment(object):
             #print(grid.summary())
 
 
-        # Create plot of the fitness trend
-        plot_path = os.path.join(self.log_base_path, f"fitnessTrend-{self.instance_name}.pdf")
         algo_budget = {}
         if isinstance(self.algo, Sq):
             for i in range(len(self.algo.algorithms)):
                 algo_budget[str(self.algo.algorithms[i])] = self.algo.algorithms[i].budget
-        plotTrend(best, plot_path, tot_random = algo_budget['Random'], showRandLimit=True)
+
+        # Create plot of the fitness trend
+        plot_path = os.path.join(self.log_base_path, f"fitnessTrend-{self.instance_name}.pdf")
+        plotTrend(best_after_eval, plot_path, xlabel="total evaluations", ylabel="fitness", tot_random = algo_budget['Random'], showRandLimit=True, showRandCol=True)
         print("\nA plot of the fitness trend was saved in '%s'." % os.path.abspath(plot_path))
+
+        # Create plot of the activity trend
+        plot_path = os.path.join(self.log_base_path, f"activityTrend-{self.instance_name}.pdf")
+        plotTrend(activity_after_eval, plot_path, y_whole = True, xlabel="total evaluations", ylabel="full bins", tot_random = algo_budget['Random'], showRandLimit=True, showRandCol=True)
+        print("A plot of the activity trend was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the performance grid
         plot_path = os.path.join(self.log_base_path, f"performancesGrid-{self.instance_name}.pdf")
-        quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]
-        xlabel = self.features_list[0]
-        ylabel = self.features_list[1]
-        
-        plotGridSubplots(quality, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, grid.fitness_domain[0], xlabel=xlabel, ylabel=ylabel)
+        quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]        
+        plotGridSubplots(quality, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, grid.fitness_domain[0], xlabel=self.features_list[0], ylabel=self.features_list[1])
         print("A plot of the performance grid was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the activity grid
         plot_path = os.path.join(self.log_base_path, f"activityGrid-{self.instance_name}.pdf")
-        plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, [0, np.max(grid.activity_per_bin)], xlabel=xlabel, ylabel=ylabel)
+        plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, [0, np.max(grid.activity_per_bin)], xlabel=self.features_list[0], ylabel=self.features_list[1])
         print("A plot of the activity grid was saved in '%s'." % os.path.abspath(plot_path))
 
 

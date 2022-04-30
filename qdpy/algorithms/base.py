@@ -53,6 +53,7 @@ default_algorithm_logger: Any
 generation = -1
 label = 0
 best_after_eval = {}
+activity_after_eval = {}
 
 def _evalWrapper(eval_id: int, fn: Callable, *args, **kwargs) -> Tuple[int, float, Any, Any]:
     """Wrapper around an evaluation function. It catches any exceptions raised by the evaluation function (as exceptions might be lost depending on which kind of parallelism scheme is applied to launch evaluations). It also measures the time elapsed by the evaluation function computation."""
@@ -640,7 +641,9 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                             
                 if self._verify_if_finished_iteration(batch_start_time):
                     batch_start_time = timer()
+
             best_after_eval[label] = self.best().fitness[0]
+            activity_after_eval[label] = len( np.matrix.nonzero(self.container.activity_per_bin) [0] )
 
         if batch_mode:
             budget = self.budget
@@ -658,7 +661,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         optimisation_elapsed: float = timer() - optimisation_start_time
         for fn in self._callbacks.get("finished_optimisation"):
             fn(self, optimisation_elapsed)
-        return best_after_eval
+        return best_after_eval, activity_after_eval
 
 
     def add_callback(self, event: str, fn: Callable) -> None:
