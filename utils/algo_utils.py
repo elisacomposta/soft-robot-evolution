@@ -77,6 +77,23 @@ def mutate(child, shape, mutation_rate=0.1, num_attempts=10):
     #print("Mutation failed")
     return None, None # no valid robot found
 
+def pretty_print(list_org, max_name_length=30):
+
+    list_formatted = []
+    for i in range(len(list_org)//4 +1):
+        list_formatted.append([])
+
+    for i in range(len(list_org)):
+        row = i%(len(list_org)//4 +1)
+        list_formatted[row].append(list_org[i])
+
+    print()
+    for row in list_formatted:
+        out = ""
+        for el in row:
+            out += str(el) + " "*(max_name_length - len(str(el)))
+        print(out)
+
 class EvaluationMap():
     history = {}
 
