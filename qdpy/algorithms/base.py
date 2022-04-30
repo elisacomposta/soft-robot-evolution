@@ -52,7 +52,7 @@ default_algorithm_logger: Any
 
 generation = -1
 label = 0
-best_per_gen = []
+best_after_eval = {}
 
 def _evalWrapper(eval_id: int, fn: Callable, *args, **kwargs) -> Tuple[int, float, Any, Any]:
     """Wrapper around an evaluation function. It catches any exceptions raised by the evaluation function (as exceptions might be lost depending on which kind of parallelism scheme is applied to launch evaluations). It also measures the time elapsed by the evaluation function computation."""
@@ -571,6 +571,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         for fn in self._callbacks.get("started_optimisation"):      # method in qdpy.algorithms.logging.TQDMAlgorithmLogger line 293
             fn(self)                                                # progress bar (_tqdm_pbar)
         def optimisation_loop(budget_fn: Callable):
+            global label
             budget = budget_fn()
             remaining_evals = budget
             batch_start_time: float = timer()
@@ -620,6 +621,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                             fitness = evaluation_history.get_evaluation(ind)
 
                         if not (self.nb_evaluations + len(inds)) < self.budget:     # end of generation
+                            label -= 1
                             break
                             
                         inds.append(ind)
@@ -638,7 +640,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                             
                 if self._verify_if_finished_iteration(batch_start_time):
                     batch_start_time = timer()
-            best_per_gen.append(self.best().fitness[0])
+            best_after_eval[label] = self.best().fitness[0]
 
         if batch_mode:
             budget = self.budget
@@ -656,7 +658,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         optimisation_elapsed: float = timer() - optimisation_start_time
         for fn in self._callbacks.get("finished_optimisation"):
             fn(self, optimisation_elapsed)
-        return best_per_gen
+        return best_after_eval
 
 
     def add_callback(self, event: str, fn: Callable) -> None:

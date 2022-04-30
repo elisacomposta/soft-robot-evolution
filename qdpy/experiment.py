@@ -147,7 +147,11 @@ class QDExperiment(object):
 
         # Create plot of the fitness trend
         plot_path = os.path.join(self.log_base_path, f"fitnessTrend-{self.instance_name}.pdf")
-        plotTrend(best, plot_path, grid.fitness_domain[0])
+        algo_budget = {}
+        if isinstance(self.algo, Sq):
+            for i in range(len(self.algo.algorithms)):
+                algo_budget[str(self.algo.algorithms[i])] = self.algo.algorithms[i].budget
+        plotTrend(best, plot_path, tot_random = algo_budget['Random'], showRandLimit=True)
         print("\nA plot of the fitness trend was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the performance grid
