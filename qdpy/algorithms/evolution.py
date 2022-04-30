@@ -142,7 +142,7 @@ class Mutation(Evolution):
         select = tools.sel_random
         def vary(ind: IndividualLike): #perform mutation
             ind[:] = [random.uniform(0, 1)]  # needed to correctly save individuals in the container
-            body, conn = mutate(ind.structure.body, ind.structure.shape, num_attempts=10)
+            body, conn = mutate(ind.structure.body, ind.structure.shape, num_attempts=50)
             if body is None or conn is None:    # mutation failed after num_attempts
                 body, conn = sample_robot(ind.structure.shape)
             structure = Structure(body, conn, shape = ind.structure.shape)
