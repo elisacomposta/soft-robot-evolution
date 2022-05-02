@@ -14,20 +14,13 @@ import numpy as np
 import torch
 import gym
 
-from utils.algo_utils import *
+from utils.algo_utils import get_ind_path, pretty_print
 from ppo.envs import make_vec_envs
 from ppo.utils import get_vec_normalize
-
-import evogym.envs
 
 def visualize_codesign(args, exp_name):
     global EXPERIMENT_PARENT_DIR
     exp_path = os.path.join(EXPERIMENT_PARENT_DIR, exp_name)
-    gen_list = os.listdir(exp_path)
-
-    #assert args.env_name != None, (
-    #    'Visualizing this experiment requires an environment be specified as a command line argument. Eg: --env-name "Walker-v0"'
-    #)
 
     if args.env_name != None:
         env_name = args.env_name
@@ -41,35 +34,11 @@ def visualize_codesign(args, exp_name):
         env_name = line[1]
         f.close()
 
-    print("\nEXPERIMENT ENVIRONMENT:", env_name, "\n")
-
-    gen_count = 0
-    while gen_count < len(gen_list):
-        try:
-            gen_list[gen_count] = int(gen_list[gen_count].split("_")[1])
-        except:
-            del gen_list[gen_count]
-            gen_count -= 1
-        gen_count += 1
-
-    all_robots = []
-    all_robots = sorted(all_robots, key=lambda x: x[2], reverse=True)
+    print()
+    print("EXPERIMENT ENVIRONMENT:", env_name)
 
     while(True):
-
-        if len(all_robots) > 0:
-            print()
-
-        pretty_print(sorted(gen_list))
         print()
-
-        print("Enter generation number: ", end="")
-        gen_number = int(input())
-
-        ind_list = os.listdir(os.path.join(EXPERIMENT_PARENT_DIR, exp_name, "generation_" + str(gen_number)))
-        pretty_print(sorted(ind_list))
-        print()
-
         print("Enter ind number: ", end="")
         ind_number = int(input())
 
@@ -77,7 +46,7 @@ def visualize_codesign(args, exp_name):
         num_iters = int(input())
 
         try:
-            save_path_structure = os.path.join(EXPERIMENT_PARENT_DIR, exp_name, "generation_" + str(gen_number), "ind" + str(ind_number), "structure.npz")
+            save_path_structure = os.path.join(get_ind_path(ind_number, exp_path), "structure.npz") # automatically get generation
             structure_data = np.load(save_path_structure)
             structure = []
             for key, value in structure_data.items():
@@ -103,7 +72,7 @@ def visualize_codesign(args, exp_name):
 
         # We need to use the same statistics for normalization as used in training
         try:
-            save_path_controller = os.path.join(EXPERIMENT_PARENT_DIR, exp_name, "generation_" + str(gen_number), "ind" + str(ind_number), "controller.pt")
+            save_path_controller = os.path.join(get_ind_path(ind_number, exp_path), "controller.pt")
             actor_critic, obs_rms = \
                         torch.load(save_path_controller,
                                     map_location='cpu')
