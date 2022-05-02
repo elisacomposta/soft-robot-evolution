@@ -612,14 +612,14 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     for _ in range(nb_suggestions):
                         ind: IndividualLike = self.ask()
 
-                        fitness = evaluation_history.get_evaluation(ind)
-                        while fitness is not None and (self.nb_evaluations + len(inds)) < self.budget:  # avoid duplicated evaluations
-                            ind.set_fitness(fitness)
+                        eval = evaluation_history.get_evaluation(ind)
+                        while eval is not None and (self.nb_evaluations + len(inds)) < self.budget:  # avoid duplicated evaluations
+                            ind.set_fitness(eval[1])
                             self._nb_evaluations += 1
                             evaluated_inds.append(ind)
                             print(f"Skipping training ind {ind.structure.label}... structure already evaluated. Fitness:", ind.fitness[0])
                             ind: IndividualLike = self.ask()
-                            fitness = evaluation_history.get_evaluation(ind)
+                            eval = evaluation_history.get_evaluation(ind)
 
                         if not (self.nb_evaluations + len(inds)) < self.budget:     # end of generation
                             label -= 1

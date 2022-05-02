@@ -1,5 +1,6 @@
+from cProfile import label
 import math
-from os import name
+import os
 from evogym import is_connected, has_actuator, get_full_connectivity, draw, get_uniform
 import random
 
@@ -102,26 +103,38 @@ class EvaluationMap():
 
     def get_evaluation(self, ind):
         hash = ind.structure.body.data.tobytes()
-        fitness = self.history.get(hash)
-        if fitness is None:
+        values = self.history.get(hash) # (label, fitness)
+        if values is None:
             return None
         else:
-            ind.set_fitness(fitness)
-            return fitness
+            ind.set_fitness(values[1])
+            return values
 
     def add(self, individuals):
         for ind in individuals:
             hash = ind.structure.body.data.tobytes()
             fitness = ind.structure.fitness
+            label = ind.structure.label     # save first ind label to copy structure and controller in dir
             if self.get_evaluation(ind) is None:
-                self.history[hash] = fitness
+                self.history[hash] = (label, fitness)   
             else:
-                assert(self.history[hash] == fitness)
+                assert(self.history[hash][2] == fitness)
 
     def pretty_print(self):
         print("\n", len(self.history), " evaluations stored")
         count = 1
         for i in self.history:
-            print("eval ", count, ": ", self.history[i])
+            print("eval ", count, " fitness:" , self.history[i][1])
             count += 1
         print()
+
+
+def get_ind_path(label, base_path='results'):
+    name = "ind" + str(label)
+    for (root,dirs,files) in os.walk(base_path, topdown=True):
+        if name in dirs:
+            return os.path.join(root, name)
+
+def generate_ind_path(base_path, generation, label):
+    return os.path.join(base_path, "generation_" + str(generation), "ind" + str(label))
+

@@ -4,8 +4,11 @@ from unittest import result
 import warnings
 import traceback
 
+from torch import from_dlpack
+
 from qdpy.experiment import QDExperiment
 from qd.sim import compute_features, make_env, simulate
+from utils.algo_utils import Structure, EvaluationMap, get_ind_path, generate_ind_path
 import time
 
 import sys
@@ -17,8 +20,6 @@ sys.path.insert(1, os.path.join(external_dir, 'pytorch_a2c_ppo_acktr_gail'))
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.join(curr_dir, '..')
-
-from utils.algo_utils import Structure, EvaluationMap
 
 class EvoGymExperiment(QDExperiment):
     def reinit(self):
@@ -36,10 +37,16 @@ class EvoGymExperiment(QDExperiment):
         if not already_evaluated:
             simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
             self.history.add(individuals)
+        else:
+            # store ind structure and controller - copy from reference ind
+            for ind in individuals:
+                ref_ind = self.history.get_evaluation(ind)[0]   # label of the reference individual
+                ref_path = get_ind_path(ref_ind, self.save_path)
+                ind_path = generate_ind_path(self.save_path, ind.structure.generation, ind.structure.label)
+                shutil.copytree(ref_path, ind_path)
 
         ## STORE RESULTS
-        output_path = os.path.join(root_dir, "results", self.experiment_name)
-        store_results(path=output_path, individuals=individuals)
+        store_results(path=self.save_path, individuals=individuals)
         return individuals
 
 
@@ -50,10 +57,11 @@ def create_base_config(resultDir):
         base_config['resultsBaseDir'] = resultDir
     return base_config
 
-def create_experiment(experiment_name, configFileName, parallelismType, base_config, num_cores):
+def create_experiment(experiment_name, configFileName, parallelismType, base_config, num_cores, save_path='results'):
     exp = EvoGymExperiment(configFileName, parallelismType, seed=None, base_config=base_config) #seed defined in conf file
     exp.experiment_name = experiment_name
     exp.num_cores = num_cores
+    exp.save_path = save_path
     print("Using configuration file '%s'. Instance name: '%s'" % (configFileName, exp.instance_name))
     return exp
 
@@ -113,7 +121,7 @@ def run_qd(experiment_name, configFileName, parallelismType, num_cores=4):
     ## LAUNCH EXPERIMENT
     base_config = create_base_config(save_path)
     try:
-        exp = create_experiment(experiment_name, configFileName, parallelismType, base_config, num_cores)
+        exp = create_experiment(experiment_name, configFileName, parallelismType, base_config, num_cores, save_path)
         store_metadata(exp, save_path)
 
         start_time = time.time()    # tmp: start timer
