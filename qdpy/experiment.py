@@ -17,11 +17,6 @@
 
 __all__ = ["QDExperiment"]
 
-#from collections.abc import Iterable
-#from typing import Optional, Tuple, TypeVar, Union, Any, MutableSet, Mapping, MutableMapping, Sequence, MutableSequence, Callable, Tuple
-#from typing_extensions import runtime, Protocol
-#import inspect
-
 from qdpy.algorithms import *
 from qdpy.containers import *
 from qdpy.plots import *
@@ -34,6 +29,7 @@ import random
 import datetime
 import pathlib
 import traceback
+import shutil
 
 from typing import Optional, Tuple, List, Iterable, Iterator, Any, TypeVar, Generic, Union, Sequence, MutableSet, MutableSequence, Type, Callable, Generator, Mapping, MutableMapping, overload
 
@@ -102,7 +98,6 @@ class QDExperiment(object):
         default_config = {}
         default_config["fitness_domain"] = self.config['fitness_domain']
         default_config["features_domain"] = self.config['features_domain']
-        #print("Domains: ", default_config)
 
         # Create containers and algorithms from configuration
         factory = Factory()         #qdpy/base.py
@@ -117,22 +112,14 @@ class QDExperiment(object):
         self.batch_mode = self.config.get('batch_mode', False)
         self.log_base_path = self.config['dataDir']
 
-        # Create a logger to pretty-print everything and generate output data files
-        #self.iteration_filenames = os.path.join(self.log_base_path, "iteration-%i_" + self.instance_name + ".p")
-        #self.final_filename = os.path.join(self.log_base_path, "final_" + self.instance_name + ".p")
-        #self.save_period = self.config.get('save_period', 0)
-        #self.logger = TQDMAlgorithmLogger(self.algo,
-        #        iteration_filenames=self.iteration_filenames, final_filename=self.final_filename, save_period=self.save_period)
-
-
     def run(self):
         # Run illumination process !
         with ParallelismManager(self.parallelism_type) as pMgr:
             try:
-                history = self.history
+                history = self.population_structure_hashes
             except:
                 history = None
-            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, evaluation_history=history) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
+            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, pop_structure_hashes=history) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
 
         # Save results
         if isinstance(self.container, Grid):
@@ -142,8 +129,6 @@ class QDExperiment(object):
             print("\n{:70s}".format("Transforming the container into a grid, for visualisation..."), end="", flush=True)
             grid = Grid(self.container, shape=(10,10), max_items_per_bin=1, fitness_domain=self.container.fitness_domain, features_domain=self.container.features_domain, storage_type=list)
             print("\tDone !")
-            #print(grid.summary())
-
 
         algo_budget = {}
         if isinstance(self.algo, Sq):
@@ -151,24 +136,40 @@ class QDExperiment(object):
                 algo_budget[str(self.algo.algorithms[i])] = self.algo.algorithms[i].budget
 
         # Create plot of the fitness trend
-        plot_path = os.path.join(self.log_base_path, f"fitnessTrend-{self.instance_name}.pdf")
-        plotTrend(best_after_eval, plot_path, xlabel="total evaluations", ylabel="fitness", tot_random = algo_budget['Random'], showRandLimit=True, showRandCol=True)
+        plot_path = os.path.join(self.log_base_path)
+        file_name =  f"fitnessTrend-{self.instance_name}"
+        plotTrend(  x=best_after_eval.keys(), y=best_after_eval.values(), 
+                    path=plot_path, fileName=file_name, 
+                    xlabel="Evaluations", ylabel="Fitness",
+                    color='green', 
+                    tot_random = algo_budget['Random'],
+                    showRandLimit=True, showRandCol=True)
         print("\nA plot of the fitness trend was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the activity trend
-        plot_path = os.path.join(self.log_base_path, f"activityTrend-{self.instance_name}.pdf")
-        plotTrend(activity_after_eval, plot_path, y_whole = True, xlabel="total evaluations", ylabel="full bins", tot_random = algo_budget['Random'], showRandLimit=True, showRandCol=True)
+        plot_path = os.path.join(self.log_base_path)
+        file_name = f"activityTrend-{self.instance_name}"
+        plotTrend(  x=activity_after_eval.keys(), y=activity_after_eval.values(), 
+                    path=plot_path, fileName=file_name, 
+                    color='purple', y_whole = True, 
+                    xlabel="Evaluations", ylabel="Bins explored",
+                    tot_random = algo_budget['Random'],
+                    showRandLimit=True, showRandCol=True)
         print("A plot of the activity trend was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the performance grid
         plot_path = os.path.join(self.log_base_path, f"performancesGrid-{self.instance_name}.pdf")
         quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]        
-        plotGridSubplots(quality, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, grid.fitness_domain[0], xlabel=self.features_list[0], ylabel=self.features_list[1])
+        plotGridSubplots(quality, plot_path, plt.get_cmap("YlGn"),
+                        grid.features_domain, grid.fitness_domain[0], 
+                        xlabel=self.features_list[0], ylabel=self.features_list[1])
         print("A plot of the performance grid was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the activity grid
         plot_path = os.path.join(self.log_base_path, f"activityGrid-{self.instance_name}.pdf")
-        plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("nipy_spectral"), grid.features_domain, [0, np.max(grid.activity_per_bin)], xlabel=self.features_list[0], ylabel=self.features_list[1])
+        plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("Purples"), 
+                        grid.features_domain, [0, np.max(grid.activity_per_bin)], 
+                        xlabel=self.features_list[0], ylabel=self.features_list[1])
         print("A plot of the activity grid was saved in '%s'." % os.path.abspath(plot_path))
 
 
@@ -192,8 +193,3 @@ class QDExperiment(object):
         ind.fitness.values = fitness
         ind.features = features
         return ind
-
-
-# MODELINE	"{{{1
-# vim:expandtab:softtabstop=4:shiftwidth=4:fileencoding=utf-8
-# vim:foldmethod=marker
