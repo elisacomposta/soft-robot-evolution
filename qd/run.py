@@ -8,7 +8,7 @@ from torch import from_dlpack
 
 from qdpy.experiment import QDExperiment
 from qd.sim import compute_features, make_env, simulate
-from utils.algo_utils import Structure, EvaluationMap, get_ind_path, generate_ind_path
+
 import time
 
 import sys
@@ -26,25 +26,16 @@ class EvoGymExperiment(QDExperiment):
         super().reinit()
         self.env_name = self.config['env_name']
         self.shape = self.config['algorithms']['shape']
-        self.history = EvaluationMap()
+        self.population_structure_hashes = {}
 
-    def eval_fn(self, individuals, already_evaluated = False):
+    def eval_fn(self, individuals):
         
         for ind in individuals:
-            compute_features(ind, self.features_list)
+            compute_features(ind, self.features_list)   #da spostare sotto se calcola energia
             make_env(env_name = self.env_name, ind=ind)
 
-        if not already_evaluated:
-            simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
-            self.history.add(individuals)
-        else:
-            # store ind structure and controller - copy from reference ind
-            for ind in individuals:
-                ref_ind = self.history.get_evaluation(ind)[0]   # label of the reference individual
-                ref_path = get_ind_path(ref_ind, self.save_path)
-                ind_path = generate_ind_path(self.save_path, ind.structure.generation, ind.structure.label)
-                shutil.copytree(ref_path, ind_path)
-
+        simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
+        
         ## STORE RESULTS
         store_results(path=self.save_path, individuals=individuals)
         return individuals

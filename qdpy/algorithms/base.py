@@ -28,7 +28,7 @@ import math
 import time
 from timeit import default_timer as timer
 from inspect import signature
-from typing import Optional, Tuple, List, Iterable, Iterator, Any, TypeVar, Generic, Union, Sequence, MutableSet, MutableSequence, Type, Callable, Generator, Mapping, MutableMapping, overload
+from typing import Dict, Hashable, Optional, Tuple, List, Iterable, Iterator, Any, TypeVar, Generic, Union, Sequence, MutableSet, MutableSequence, Type, Callable, Generator, Mapping, MutableMapping, overload
 from typing_extensions import runtime, Protocol
 import warnings
 import numpy as np
@@ -46,7 +46,8 @@ from qdpy import tools
 import functools
 partial = functools.partial # type: ignore
 
-from utils.algo_utils import EvaluationMap
+#from utils.algo_utils import EvaluationMap
+from evogym import hashable
 
 default_algorithm_logger: Any
 
@@ -161,8 +162,7 @@ class QDAlgorithmLike(Protocol):
     def best(self) -> IndividualLike: ...
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
-            batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            send_several_suggestions_to_fn: bool = False) -> IndividualLike: ...
+            batch_mode: bool = True, executor: Optional[ExecutorLike] = None) -> tuple: ...
 
     def add_callback(self, event: str, fn: Callable) -> None: ...
 
@@ -397,11 +397,6 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         # Call callback functions
         for fn in self._callbacks.get("ask"):
             fn(self, suggestion)
-
-        global label
-        label += 1
-        suggestion.structure.label = label
-        suggestion.structure.generation = generation
         return suggestion
 
 
@@ -551,11 +546,24 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         return True
 
 
-    def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
-            batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            send_several_suggestions_to_fn: bool = False, evaluation_history:EvaluationMap = None) -> IndividualLike:
-        """optimization process"""
-        
+    def optimise(self, evaluate: Callable, budget: Optional[int] = None, batch_mode: bool = True,
+            executor: Optional[ExecutorLike] = None, pop_structure_hashes: dict = None) -> tuple:
+        """
+        Optimization process.
+
+        Args:
+            evaluate (callable function): function to call to evaluate individuals
+            budget (int): max number of evaluation
+            batch_mode (bool): if True, evaluate batch_size individuals each time
+            executor (ExecutorLike): type of executor
+            pop_structure_hashes (dict): keep track of already evaluated structures to avoid duplicates
+
+        Returns:
+            best_after_eval (dict): key=evaluations, value=best fitness after evaluations
+            activity_after_eval (dict): key=evaluations, value=number of bins explored after evaluations
+        """
+
+        global label
         global generation
         generation += 1
         print("\n*** Optimizing... generation_" + str(generation))
@@ -571,14 +579,14 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         # Call callback functions
         for fn in self._callbacks.get("started_optimisation"):      # method in qdpy.algorithms.logging.TQDMAlgorithmLogger line 293
             fn(self)                                                # progress bar (_tqdm_pbar)
+
         def optimisation_loop(budget_fn: Callable):
             global label
             budget = budget_fn()
             remaining_evals = budget
             batch_start_time: float = timer()
-            futures: MutableMapping[int, FutureLike] = {}
-            individuals: MutableMapping[int, Union[IndividualLike, Sequence[IndividualLike]]] = {}
-            while self.nb_evaluations < self.budget and remaining_evals > 0  or len(futures) > 0:
+
+            while self.nb_evaluations < self.budget and remaining_evals > 0:
                 # Update budget
                 new_budget = budget_fn()
                 if new_budget > budget:
@@ -587,63 +595,37 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     remaining_evals = max(0, remaining_evals - (budget - new_budget))
                 budget = new_budget
 
-                nb_suggestions = min(remaining_evals, self.batch_size - len(futures), self.budget - self.nb_evaluations)
-                if send_several_suggestions_to_fn:
-                    # Launch evals on suggestions
-                    eval_id: int = remaining_evals
-                    inds: Sequence[IndividualLike] = [self.ask() for _ in range(nb_suggestions)]
-                    individuals[eval_id] = inds
-                    futures[eval_id] = _executor.submit(_severalEvalsWrapper, eval_id, evaluate, inds)
-                    remaining_evals -= len(inds)
-                    # Wait for next completed future
-                    f = generic_as_completed(list(futures.values()))
-                    ind_id, ind_elapsed, ind_res, ind_exc = f.result()
-                    if ind_exc is None:
-                        inds = individuals[ind_id] # type: ignore
-                        for i in range(len(inds)):
-                            self.tell(inds[i], fitness=ind_res[i][0], features=ind_res[i][1], elapsed=ind_elapsed)
+                nb_suggestions = min(remaining_evals, self.batch_size, self.budget - self.nb_evaluations)
+
+                # Launch evals on suggestions
+                individuals = []
+                while len(individuals) < nb_suggestions:
+                    ind: IndividualLike = self.ask()
+                    if ind.structure != None:
+                        if pop_structure_hashes == None:    # no track of evaluated structures
+                            individuals.append(ind)
+                        elif hashable(ind.structure.body) not in pop_structure_hashes: # structure not evaluated yet
+                            individuals.append(ind)
+                            pop_structure_hashes[hashable(ind.structure.body)] = True
+
+                for ind in individuals:    # set label, generation
+                    label += 1
+                    ind.structure.label = label
+                    ind.structure.generation = generation
+
+                individuals = evaluate(individuals)
+
+                for ind in individuals:
+                    if isinstance(ind, IndividualLike):
+                        self.tell(ind)
                     else:
-                        warnings.warn(f"Individual evaluation raised the following exception: {ind_exc} !")
-                        self._nb_evaluations += len(ind_res)
-                else:
-                    # Launch evals on suggestions
-                    inds = []
-                    evaluated_inds = []
-                    for _ in range(nb_suggestions):
-                        ind: IndividualLike = self.ask()
-
-                        eval = evaluation_history.get_evaluation(ind)
-                        while eval is not None and (self.nb_evaluations + len(inds)) < self.budget:  # avoid duplicated evaluations
-                            ind.set_fitness(eval[1])
-                            self._nb_evaluations += 1
-                            evaluated_inds.append(ind)
-                            print(f"Skipping training ind {ind.structure.label}... structure already evaluated. Fitness:", ind.fitness[0])
-                            ind: IndividualLike = self.ask()
-                            eval = evaluation_history.get_evaluation(ind)
-
-                        if not (self.nb_evaluations + len(inds)) < self.budget:     # end of generation
-                            label -= 1
-                            break
-                            
-                        inds.append(ind)
-                        remaining_evals -= 1
-                        if remaining_evals <= 0:    # end of batch
-                            break
-
-                    inds = evaluate(inds)   # evaluate new individuals
-                    evaluate(evaluated_inds, already_evaluated=True) # compute and store info of duplicated individuals
-
-                    for ind in inds:
-                        if isinstance(ind, IndividualLike):
-                            self.tell(ind)
-                        else:
-                            self.tell(ind, fitness=ind.fitness, features=ind.features)
+                        self.tell(ind, fitness=ind.fitness, features=ind.features)
                             
                 if self._verify_if_finished_iteration(batch_start_time):
                     batch_start_time = timer()
 
-            best_after_eval[label] = self.best().fitness[0]
-            activity_after_eval[label] = len( np.matrix.nonzero(self.container.activity_per_bin) [0] )
+                best_after_eval[label] = self.best().fitness[0]
+                activity_after_eval[label] = len( np.matrix.nonzero(self.container.activity_per_bin) [0] )
 
         if batch_mode:
             budget = self.budget
@@ -678,7 +660,6 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         _lst_events: Sequence[str] = ['ask', 'tell', 'iteration', 'started_optimisation', 'finished_optimisation']
         if not event in _lst_events:
             raise ValueError(f"`event` can be either {','.join(_lst_events)}.")
-        #self._callbacks.setdefault(event, []).append(fn)
         self._callbacks.add_callback(event, fn)
 
 
@@ -761,13 +742,6 @@ class AlgWrapper(QDAlgorithm):
             name: Optional[str] = None, batch_mode: bool = False, **kwargs):
         if len(algorithms) == 0:
             raise ValueError("`algorithms` must not be empty.")
-#        if isinstance(algorithms, Mapping):
-#            self.algorithms = []
-#            for k,v in algorithms.items():
-#                for i in range(v):
-#                    self.algorithms.append(k)
-#        else:
-#            self.algorithms = list(algorithms)
         self.algorithms = list(algorithms)
         self.current_idx = 0
         self.current = self.algorithms[self.current_idx]
@@ -793,22 +767,10 @@ class AlgWrapper(QDAlgorithm):
             raise AttributeError
         return getattr(self.current, attr)
 
-
-#    def __get_saved_state__(self) -> Mapping[str, Any]:
-#        """Return a dictionary containing the relevant information to save. Only include information from `self.algorithms`."""
-#        res = copy.deepcopy(self.current.__get_saved_state__())
-#        entries = {k:v for k,v in inspect.getmembers(self) if not k.startswith('_') and not inspect.ismethod(v)}
-#        return {**entries, **res}
-
-
     @abc.abstractmethod
     def next(self) -> None:
         """Switch to the next algorithm in Sequence `self.algorithms`, if there is one."""
         raise NotImplementedError("Method `_internal_ask` must be implemented by AlgWrapper subclasses.")
-#        if self.current_idx < len(self.algorithms) - 1:
-#            self.switch_to(self.current_idx + 1)
-#        else:
-#            self.switch_to(0)
 
     def switch_to(self, idx: int):
         """Switch to another algorithm of index `idx` in `self.algorithms`."""
@@ -828,11 +790,6 @@ class AlgWrapper(QDAlgorithm):
 
     def best(self) -> IndividualLike:
         return self.current.best()
-
-#    def ask(self) -> IndividualLike:
-#        ind = self.current.ask()
-#        self.next()
-#        return ind
 
     def _internal_ask(self, base_ind: IndividualLike) -> IndividualLike:
         if self.batch_mode:
@@ -854,24 +811,6 @@ class AlgWrapper(QDAlgorithm):
         added: bool = self.current.tell(individual, fitness, features, elapsed)
         self._tell_after_container_update(individual, added)
         return added
-
-#    def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
-#            batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-#            send_several_suggestions_to_fn: bool = False) -> IndividualLike:
-#        for _ in range(self.current_idx, len(self.algorithms)):
-#            try:
-#                res = self.current.optimise(evaluate, budget, batch_mode, executor, send_several_suggestions_to_fn)
-#            except Exception as e:
-#                warnings.warn(f"Optimisation failed with algorithm '{self.current.name}': {e}")
-#                traceback.print_exc()
-#            self.next()
-#        return res
-
-#    def add_callback(self, event: str, fn: Callable) -> None:
-#        for a in self.algorithms:
-#            a.add_callback(event, fn)
-
-
 
 
 @registry.register
@@ -966,10 +905,10 @@ class Sq(QDAlgorithmLike, Summarisable, Saveable, Copyable, CreatableFromConfig)
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
             batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            send_several_suggestions_to_fn: bool = False, evaluation_history = None) -> IndividualLike:
+            pop_structure_hashes: dict = None) -> tuple:
         for _ in range(self.current_idx, len(self.algorithms)):
             try:
-                res = self.current.optimise(evaluate, budget, batch_mode, executor, send_several_suggestions_to_fn, evaluation_history=evaluation_history)
+                res = self.current.optimise(evaluate, budget, batch_mode, executor, pop_structure_hashes=pop_structure_hashes)
             except Exception as e:
                 warnings.warn(f"Optimisation failed with algorithm '{self.current.name}': {e}")
                 traceback.print_exc()
