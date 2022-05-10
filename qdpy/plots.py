@@ -23,15 +23,13 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from functools import reduce
 from operator import mul
 
-from typing import Optional, Tuple, List, Iterable, Iterator, Any, TypeVar, Generic, Union, Sequence, MutableSet, MutableSequence, Type, Callable, Generator, Mapping, MutableMapping, overload
-
 from qdpy.utils import is_iterable
 from qdpy import containers
 from qdpy import algorithms
+from qd.plot import store_plot_data
 
 
-########### Plots ########### {{{1
-
+########### Plots ########### 
 
 # TODO refactor name, etc
 def plotGridSubplots(data, outputFilename, cmap, featuresBounds=((0., 1.), (0., 1.), (0., 1.), (0., 1.)), fitnessBounds=(0., 1.), drawCbar = True, xlabel = "", ylabel = "", cBarLabel = "", nbBins = None, nbTicks = None, binSizeInInches = 0.30):
@@ -42,7 +40,7 @@ def plotGridSubplots(data, outputFilename, cmap, featuresBounds=((0., 1.), (0., 
     elif len(data.shape) <= 2:
         plotGrid(data, outputFilename, cmap, featuresBounds=featuresBounds, fitnessBounds=fitnessBounds, drawCbar=drawCbar, xlabel=xlabel, ylabel=ylabel, cBarLabel=cBarLabel, nbBins=nbBins, nbTicks=nbTicks)
         return
-        
+    
     # Verify dimension is even
     if len(data.shape) % 2 == 1:
         data = data.reshape((data.shape[0], 1) + data.shape[1:])
@@ -52,8 +50,6 @@ def plotGridSubplots(data, outputFilename, cmap, featuresBounds=((0., 1.), (0., 
     if not nbBins:
         nbBins = data.shape
 
-    #data[0,:,:,:] = np.linspace(0., 1., nbBins[1] * nbBins[2] * nbBins[3]).reshape((nbBins[1], nbBins[2], nbBins[3]))
-
     # Compute figure infos from nbBins
     horizNbBins = nbBins[::2]
     horizNbBinsProd = reduce(mul, horizNbBins, 1)
@@ -62,10 +58,7 @@ def plotGridSubplots(data, outputFilename, cmap, featuresBounds=((0., 1.), (0., 
     totProp = horizNbBinsProd + vertNbBinsProd
     upperlevelTot = nbBins[0] + nbBins[1]
 
-    # Determine figure size from nbBins infos
-    #figsize = [2.1 + 10. * horizNbBinsProd / upperlevelTot, 1. + 10. * vertNbBinsProd / upperlevelTot]
-    #if figsize[1] < 2:
-    #    figsize[1] = 2.
+
     figsize = [2.1 + horizNbBinsProd * binSizeInInches, 1. + vertNbBinsProd * binSizeInInches]
 
     # Create figure
@@ -95,9 +88,6 @@ def plotGridSubplots(data, outputFilename, cmap, featuresBounds=((0., 1.), (0., 
         cbar.ax.set_ylabel(cBarLabel, fontsize=22)
 
     fig.savefig(outputFilename)
-
-
-
 
 
 # TODO refactor name, etc
@@ -162,7 +152,6 @@ def drawGridInAx(data, ax, cmap, featuresBounds, fitnessBounds, aspect="equal", 
     return cax
 
 
-
 # TODO refactor name, etc
 def plotGrid(data, outputFilename, cmap, featuresBounds=[(0., 1.), (0., 1.)], fitnessBounds=(0., 1.), drawCbar = True, xlabel = "", ylabel = "", cBarLabel = "", nbBins = None, nbTicks = None):
     if len(data.shape) == 1:
@@ -174,6 +163,8 @@ def plotGrid(data, outputFilename, cmap, featuresBounds=[(0., 1.), (0., 1.)], fi
         raise ValueError("plotGrid only supports 1 ou 2-dimensional data.")
     if not nbBins:
         nbBins = data.shape
+    
+    store_plot_data(data, os.path.dirname(outputFilename), os.path.basename(outputFilename).split('.')[0])
 
     figsize = [2.1 + 10. * nbBins[0] / (nbBins[0] + nbBins[1]), 1. + 10. * nbBins[1] / (nbBins[0] + nbBins[1])]
     aspect = "equal"
@@ -186,7 +177,6 @@ def plotGrid(data, outputFilename, cmap, featuresBounds=[(0., 1.), (0., 1.)], fi
 
     if drawCbar:
         divider = make_axes_locatable(ax)
-        #cax2 = divider.append_axes("right", size="5%", pad=0.15)
         cax2 = divider.append_axes("right", size=0.5, pad=0.15)
         cbar = fig.colorbar(cax, cax=cax2, format="%.2f")
         cbar.ax.tick_params(labelsize=18)
@@ -205,11 +195,8 @@ def plot_evals(logger, output_filename, key="max", ylim=None, ylabel=None, figsi
         data = logger.evals[key]
     else:
         data = logger
-    #print(data)
 
     fig, ax = plt.subplots(figsize=figsize)
-    #ax = fig.add_subplot(111)
-    #fig.subplots_adjust(bottom=0.3)
 
     x = np.arange(len(data))
 
@@ -230,23 +217,12 @@ def plot_evals(logger, output_filename, key="max", ylim=None, ylabel=None, figsi
     if ylim is not None:
         ax.set_ylim(ylim)
 
-    #x = np.arange(0, nb_iterations+1, 25)
-    #if len(x) > 4:
-    #    x = x[::2]
-    #tsplot(ax, data, color='k')
-    #ax.set_ylim([0., 1.])
     plt.xlabel("Evaluations", fontsize=14)
-    #plt.xticks(x, fontsize=18)
-    #ax.set_xticklabels([str(i * args.nbEvalsPerIt) for i in x])
     ylabel_ = ylabel if ylabel is not None else key
     plt.ylabel(ylabel_, fontsize=14)
-    #plt.yticks(fontsize=18)
-    #sns.despine()
-    #plt.tight_layout(rect=[0, 0, 1.0, 0.95])
     plt.tight_layout()
     fig.savefig(output_filename)
     plt.close(fig)
-
 
 
 def plot_iterations(logger, output_filename, key="max", ylim=None, ylabel=None, figsize=(4., 4.)):
@@ -311,9 +287,3 @@ def default_plots_grid(logger, output_dir=None, to_grid_parameters={}, fitness_d
     plot_path = os.path.join(output_dir, "activityGrid.pdf")
     max_activity = np.max(grid.activity_per_bin)
     plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("Reds", max_activity), grid.features_domain, [0, max_activity], nbTicks=None)
-
-
-
-# MODELINE	"{{{1
-# vim:expandtab:softtabstop=4:shiftwidth=4:fileencoding=utf-8
-# vim:foldmethod=marker
