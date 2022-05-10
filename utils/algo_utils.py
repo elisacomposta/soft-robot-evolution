@@ -1,8 +1,5 @@
-from cProfile import label
-import math
 import os
 from evogym import is_connected, has_actuator, get_full_connectivity, draw, get_uniform
-import random
 
 class Structure():
 
@@ -86,12 +83,37 @@ def pretty_print(list_org, max_name_length=30):
 
 
 def get_ind_path(label, base_path='results'):
+    """
+    Returns the path of individual "ind<label>".
+    """
     name = "ind" + str(label)
     for (root,dirs,files) in os.walk(base_path, topdown=True):
         if name in dirs:
             return os.path.join(root, name)
 
 
-def generate_ind_path(base_path, generation, label):
-    return os.path.join(base_path, "generation_" + str(generation), "ind" + str(label))
+def find_in_metadata(path, field):
+    """
+    Gets the value stored in the path/metadata.txt file of an experiment, for a corrisponding field
+    """
 
+    path = os.path.join(path, 'metadata.txt')
+    f = open(path, "r")
+    line = f.readline().rstrip().split(": ")
+    while line[0]!= field:
+        line = f.readline().rstrip().split(": ")
+    f.close()
+    return line[1]
+
+
+def string_to_list(word):
+    """
+    Converts a string of csv into a list.
+    e.g.: ['val1', 'val2'], type: string -> type: list, items: val1, val2
+    """
+
+    splitted = word.split(",")
+    clean_list = []
+    for item in splitted:
+        clean_list.append(item.translate({ ord(c): None for c in "[]' " }))
+    return clean_list
