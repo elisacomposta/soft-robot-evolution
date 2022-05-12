@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import matplotlib.cm as cm
+from matplotlib.colors import ListedColormap
 
 def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xticks = 10, nb_yticks = 7, y_whole = False, color = 'blue', tot_random = 0, showRandLimit = False, showRandCol = False):
     """
@@ -62,6 +64,9 @@ def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xtick
     # plot
     ax.plot(x, y, color=color)
 
+    # plot standard deviation
+    ax.fill_between(x, y-error, y+error,  color=color, alpha=0.15)
+
     # plot random section if required
     if (showRandCol or showRandLimit) and tot_random is not None and tot_random > 0:
         x0 = [x[i] for i in range(len(x)) if x[i] <= tot_random]
@@ -70,9 +75,6 @@ def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xtick
             ax.plot(x0, y0, color = 'tomato')
         if showRandLimit:
             ax.vlines(x=[tot_random], ymin=0, ymax=y[-1], colors='orange', ls='--', lw=1)
-        
-    # plot standard deviation
-    ax.fill_between(x, y-error, y+error,  color=color, alpha=0.15)
 
     # save plot
     plt.savefig(os.path.join(path, fileName+'.pdf'))
@@ -81,7 +83,7 @@ def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xtick
     store_plot_data((x, y), path, fileName)
 
 
-def plot_mean_trend(experiments, name, saving_path, results_dir, color, x_label='', y_label='', y_whole=False):
+def plot_mean_trend(experiments, name, saving_path, results_dir, color, x_label='', y_label='', y_whole=False, tot_random=0):
     """
     Plot mean trend.
     
@@ -123,7 +125,7 @@ def plot_mean_trend(experiments, name, saving_path, results_dir, color, x_label=
     error = y_dir.std(axis=0) 
     
     # plot trend
-    plotTrend(x_mean, y_mean, saving_path, name, error=error, color=color, xlabel=x_label, ylabel=y_label, y_whole=y_whole)
+    plotTrend(x_mean, y_mean, saving_path, name, error=error, color=color, xlabel=x_label, ylabel=y_label, y_whole=y_whole, tot_random=tot_random, showRandLimit=True)
 
 
 
@@ -194,3 +196,11 @@ def store_plot_data(data, path, file_name):
         pass
     np.save(os.path.join(path, 'plot_data', file_name.split('-')[0]), data)
 
+
+def whiten_cmap(cmap_name):
+    """
+    Returns a cmap with 0 value corresponding to white
+    """
+    newcolors = cm.get_cmap(cmap_name, 256)(np.linspace(0, 1, 256))
+    newcolors[0, :] = np.array([0/256, 0/256, 0/256, 0])
+    return ListedColormap(newcolors)

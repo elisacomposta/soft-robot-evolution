@@ -28,10 +28,7 @@ import yaml
 import random
 import datetime
 import pathlib
-import traceback
 import shutil
-
-from typing import Optional, Tuple, List, Iterable, Iterator, Any, TypeVar, Generic, Union, Sequence, MutableSet, MutableSequence, Type, Callable, Generator, Mapping, MutableMapping, overload
 
 class QDExperiment(object):
     def __init__(self, config_filename, parallelism_type = "sequential", seed = None, base_config = None):
@@ -151,8 +148,8 @@ class QDExperiment(object):
         file_name = f"activityTrend-{self.instance_name}"
         plotTrend(  x=activity_after_eval.keys(), y=activity_after_eval.values(), 
                     path=plot_path, fileName=file_name, 
-                    color='purple', y_whole = True, 
-                    xlabel="Evaluations", ylabel="Bins explored",
+                    color='royalblue', y_whole = True, 
+                    xlabel="Evaluations", ylabel="Explored bins",
                     tot_random = algo_budget['Random'],
                     showRandLimit=True, showRandCol=True)
         print("A plot of the activity trend was saved in '%s'." % os.path.abspath(plot_path))
@@ -167,7 +164,7 @@ class QDExperiment(object):
 
         # Create plot of the activity grid
         plot_path = os.path.join(self.log_base_path, f"activityGrid-{self.instance_name}.pdf")
-        plotGridSubplots(grid.activity_per_bin, plot_path, plt.get_cmap("Purples"), 
+        plotGridSubplots(grid.activity_per_bin, plot_path, whiten_cmap('Blues'), 
                         grid.features_domain, [0, np.max(grid.activity_per_bin)], 
                         xlabel=self.features_list[0], ylabel=self.features_list[1])
         print("A plot of the activity grid was saved in '%s'." % os.path.abspath(plot_path))
