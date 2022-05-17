@@ -24,23 +24,25 @@ def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xtick
         showRandCol:    if True use a different color for the random generation  
     """
 
+    
     # set data
     x = np.array(list(x))
     y = np.array(list(y))
     
+    # define 0-error array if not provided
+    if len(error)==0:
+        error = np.zeros(len(y))
+
     if x[0] != 0:       # push front (0, 0) if missing
         x =np.insert(x, 0, 0)
         y = np.insert(y, 0, 0)
+        error = np.insert(error, 0, 0)
     tot_evaluations = x[-1]
 
     # generate x ticks
     stepx = np.round(tot_evaluations / nb_xticks, 0)
     xticks = np.arange(x[0], tot_evaluations + stepx, stepx)
     
-    # define 0-error array if not provided
-    if len(error)==0:
-        error = np.zeros(len(y))
-
     # generate y ticks
     max_y = y[-1] + error[-1]
     stepy = ( max_y - y[0] ) / nb_yticks
