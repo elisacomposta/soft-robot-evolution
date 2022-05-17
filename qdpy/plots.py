@@ -164,8 +164,11 @@ def plotGrid(data, outputFilename, cmap, featuresBounds=[(0., 1.), (0., 1.)], fi
     if not nbBins:
         nbBins = data.shape
     
-    store_plot_data(data, os.path.dirname(outputFilename), os.path.basename(outputFilename).split('.')[0])
-
+    try:
+        store_plot_data(data, os.path.dirname(outputFilename), os.path.basename(outputFilename).split('.')[0])
+    except:
+        print("Skipped plot data storing")
+        
     figsize = [2.1 + 10. * nbBins[0] / (nbBins[0] + nbBins[1]), 1. + 10. * nbBins[1] / (nbBins[0] + nbBins[1])]
     aspect = "equal"
     if figsize[1] < 2:

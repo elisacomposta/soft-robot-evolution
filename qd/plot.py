@@ -79,8 +79,11 @@ def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xtick
     # save plot
     plt.savefig(os.path.join(path, fileName+'.pdf'))
 
-    # store coordinates for future plots
-    store_plot_data((x, y), path, fileName)
+    try:
+        # store coordinates for future plots
+        store_plot_data((x, y), path, fileName)
+    except:
+        print("Skipped plot data storing")
 
 
 def plot_mean_trend(experiments, name, saving_path, results_dir, color, x_label='', y_label='', y_whole=False, tot_random=0):
@@ -129,7 +132,7 @@ def plot_mean_trend(experiments, name, saving_path, results_dir, color, x_label=
 
 
 
-def plot_mean_grid(experiments, name, color, saving_path, results_dir, x_label='', y_label=''):
+def plot_mean_grid(experiments, name, color, saving_path, results_dir, x_label='', y_label='', fitnessDomain=None):
     """
     Plot mean grid.
     
@@ -174,9 +177,11 @@ def plot_mean_grid(experiments, name, color, saving_path, results_dir, x_label='
     
     # plot grid
     from qdpy.plots import plotGridSubplots
+    if fitnessDomain == None:
+        fitnessDomain = [0, np.max(mean_grid)]
     plotGridSubplots(mean_grid, path, plt.get_cmap(color),
                     featuresBounds=[(0.0, 1.0), (0.0, 1.0)],
-                    fitnessBounds=[0, np.max(mean_grid)], 
+                    fitnessBounds=fitnessDomain, 
                     xlabel=x_label, ylabel=y_label)
 
 
@@ -194,6 +199,7 @@ def store_plot_data(data, path, file_name):
         os.makedirs(os.path.join(path, 'plot_data'))
     except:
         pass
+
     np.save(os.path.join(path, 'plot_data', file_name.split('-')[0]), data)
 
 
