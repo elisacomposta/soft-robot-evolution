@@ -16,9 +16,9 @@ pip3 install qdpy[all]
 
 <br>Inside the main folder, clone EvolutionGym repository:
 ```shell
-git clone --recurse-submodules https://github.com/EvolutionGym/evogym.git
+git clone --recurse-submodules https://github.com/elisacomposta/evogym.git
 ```
-and follow the instructions to install it at [evogym repository](https://github.com/EvolutionGym/evogym)
+and follow the instructions to install it at [evogym repository](https://github.com/elisacomposta/evogym.git)
 
 # Run example
 Parameters can be defined in `run_qd.py`:
