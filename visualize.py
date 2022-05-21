@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import gym
 
-from utils.algo_utils import get_ind_path, pretty_print
+from utils.algo_utils import get_ind_path, pretty_print, get_stored_structure
 from ppo.envs import make_vec_envs
 from ppo.utils import get_vec_normalize
 
@@ -46,15 +46,11 @@ def visualize_codesign(args, exp_name):
         num_iters = int(input())
 
         try:
-            save_path_structure = os.path.join(get_ind_path(ind_number, exp_path), "structure.npz") # automatically get generation
-            structure_data = np.load(save_path_structure)
-            structure = []
-            for key, value in structure_data.items():
-                structure.append(value)
-            structure = tuple(structure)
-            print(f'\nStructure robot:\n{structure}\n')
+            save_path_structure = get_ind_path(ind_number, exp_path)
+            structure = get_stored_structure(save_path_structure)
+            print(f'\nRobot body:\n{structure[0]}\n')
         except:
-            print(f'\nCould not load robot strucure data at {save_path_structure}.\n')
+            print(f'\nCould not load robot strucure data at {save_path_structure}/structure.npz.\n')
             continue
 
         if num_iters == 0:
@@ -93,23 +89,17 @@ def visualize_codesign(args, exp_name):
         env.render('screen')
 
         total_steps = 0
-        reward_sum = 0
         while total_steps < num_iters:
             with torch.no_grad():
                 value, action, _, recurrent_hidden_states = actor_critic.act(
                     obs, recurrent_hidden_states, masks, deterministic=args.det)
 
-
             # Obser reward and next obs
             obs, reward, done, _ = env.step(action)
             masks.fill_(0.0 if (done) else 1.0)
-            reward_sum += reward
             
             if done == True:
                 env.reset()
-                reward_sum = float(reward_sum.numpy().flatten()[0])
-                print(f'\ntotal reward: {round(reward_sum, 5)}\n')
-                reward_sum = 0
 
             env.render('screen')
 

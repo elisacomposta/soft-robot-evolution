@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from evogym import is_connected, has_actuator, get_full_connectivity, draw, get_uniform
 
 class Structure():
@@ -59,7 +60,6 @@ def mutate(child, shape, mutation_rate=0.1, num_attempts=50):
                 if draw(mutation) == 0: # mutation
                     child[i][j] = draw(pd) 
         if is_connected(child) and has_actuator(child):
-            #print("Successful mutation")
             return (child, get_full_connectivity(child))
 
     return None, None # no valid robot found
@@ -117,3 +117,14 @@ def string_to_list(word):
     for item in splitted:
         clean_list.append(item.translate({ ord(c): None for c in "[]' " }))
     return clean_list
+
+def get_stored_structure(structure_path):
+    """
+    Returns a structure previously stored in
+    """
+    structure_data = np.load(os.path.join(structure_path, 'structure.npz'))
+    structure = []
+    for key, value in structure_data.items():
+        structure.append(value)
+    structure = tuple(structure)
+    return structure
