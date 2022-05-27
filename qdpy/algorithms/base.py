@@ -547,7 +547,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
 
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, batch_mode: bool = True,
-            executor: Optional[ExecutorLike] = None, pop_structure_hashes: dict = None) -> tuple:
+            executor: Optional[ExecutorLike] = None, pop_structure_hashes: dict = None, structure_from: str = '') -> tuple:
         """
         Optimization process.
 
@@ -557,6 +557,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
             batch_mode (bool): if True, evaluate batch_size individuals each time
             executor (ExecutorLike): type of executor
             pop_structure_hashes (dict): keep track of already evaluated structures to avoid duplicates
+            structure_from (string): if provided, copy ind structure from 'structure_from' experiment
 
         Returns:
             best_after_eval (dict): key=evaluations, value=best fitness after evaluations
@@ -577,8 +578,11 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
             raise ValueError("`budget` must be provided.")
         _executor: ExecutorLike = executor if executor is not None else SequentialExecutor()
         # Call callback functions
-        for fn in self._callbacks.get("started_optimisation"):      # method in qdpy.algorithms.logging.TQDMAlgorithmLogger line 293
-            fn(self)                                                # progress bar (_tqdm_pbar)
+        for fn in self._callbacks.get("started_optimisation"):
+            fn(self)    
+
+        if structure_from !='':
+            print("Using structures from experiment:", structure_from)                                                   
 
         def optimisation_loop(budget_fn: Callable):
             global label
@@ -602,7 +606,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                 while len(individuals) < nb_suggestions:
                     ind: IndividualLike = self.ask()
                     if ind.structure != None:
-                        if pop_structure_hashes == None:    # no track of evaluated structures
+                        if pop_structure_hashes == None or structure_from!='':    # no track of structures
                             individuals.append(ind)
                         elif hashable(ind.structure.body) not in pop_structure_hashes: # structure not evaluated yet
                             individuals.append(ind)
@@ -612,6 +616,16 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     label += 1
                     ind.structure.label = label
                     ind.structure.generation = generation
+                    
+                    # copy structure from existing experiment
+                    if structure_from != '':
+                        structure_data = np.load(os.path.join('results', structure_from, 'generation_'+str(generation), 'ind'+str(label), 'structure.npz'))
+                        structure = []
+                        for key, value in structure_data.items():
+                            structure.append(value)
+                        structure = tuple(structure)
+                        ind.structure.body = structure[0]
+                        ind.structure.connections = structure[1]
 
                 individuals = evaluate(individuals)
 
@@ -905,10 +919,10 @@ class Sq(QDAlgorithmLike, Summarisable, Saveable, Copyable, CreatableFromConfig)
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
             batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            pop_structure_hashes: dict = None) -> tuple:
+            pop_structure_hashes: dict = None, structure_from: str = '') -> tuple:
         for _ in range(self.current_idx, len(self.algorithms)):
             try:
-                res = self.current.optimise(evaluate, budget, batch_mode, executor, pop_structure_hashes=pop_structure_hashes)
+                res = self.current.optimise(evaluate, budget, batch_mode, executor, pop_structure_hashes=pop_structure_hashes, structure_from=structure_from)
             except Exception as e:
                 warnings.warn(f"Optimisation failed with algorithm '{self.current.name}': {e}")
                 traceback.print_exc()

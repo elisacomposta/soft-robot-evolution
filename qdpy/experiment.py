@@ -108,6 +108,10 @@ class QDExperiment(object):
 
         self.batch_mode = self.config.get('batch_mode', False)
         self.log_base_path = self.config['dataDir']
+        try:
+            self.structure_from = self.config['from_exp']
+        except:
+            self.structure_from = ''
 
     def run(self):
         # Run illumination process !
@@ -116,7 +120,7 @@ class QDExperiment(object):
                 history = self.population_structure_hashes
             except:
                 history = None
-            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, pop_structure_hashes=history) # Disable batch_mode (steady-state mode) to ask/tell new individuals without waiting the completion of each batch
+            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, pop_structure_hashes=history, structure_from=self.structure_from)
 
         # Save results
         if isinstance(self.container, Grid):
@@ -131,7 +135,7 @@ class QDExperiment(object):
         if isinstance(self.algo, Sq):
             for i in range(len(self.algo.algorithms)):
                 algo_budget[str(self.algo.algorithms[i])] = self.algo.algorithms[i].budget
-
+        
         # Create plot of the fitness trend
         plot_path = os.path.join(self.log_base_path)
         file_name =  f"fitnessTrend-{self.instance_name}"
@@ -139,8 +143,7 @@ class QDExperiment(object):
                     path=plot_path, fileName=file_name, 
                     xlabel="Evaluations", ylabel="Fitness",
                     color='green', 
-                    tot_random = algo_budget['Random'],
-                    showRandLimit=True, showRandCol=True)
+                    tot_random = algo_budget['Random'], showRandCol=True)
         print("\nA plot of the fitness trend was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the activity trend
@@ -148,10 +151,9 @@ class QDExperiment(object):
         file_name = f"activityTrend-{self.instance_name}"
         plotTrend(  x=activity_after_eval.keys(), y=activity_after_eval.values(), 
                     path=plot_path, fileName=file_name, 
-                    color='royalblue', y_whole = True, 
+                    color='purple', y_whole = True, 
                     xlabel="Evaluations", ylabel="Explored bins",
-                    tot_random = algo_budget['Random'],
-                    showRandLimit=True, showRandCol=True)
+                    tot_random = algo_budget['Random'], showRandCol=True)
         print("A plot of the activity trend was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the performance grid
@@ -159,16 +161,16 @@ class QDExperiment(object):
         quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]        
         plotGridSubplots(quality, plot_path, plt.get_cmap("YlGn"),
                         grid.features_domain, grid.fitness_domain[0], 
-                        xlabel=self.features_list[0], ylabel=self.features_list[1])
+                        xlabel=self.features_list[0].capitalize(), ylabel=self.features_list[1].capitalize())
         print("A plot of the performance grid was saved in '%s'." % os.path.abspath(plot_path))
 
         # Create plot of the activity grid
         plot_path = os.path.join(self.log_base_path, f"activityGrid-{self.instance_name}.pdf")
         plotGridSubplots(grid.activity_per_bin, plot_path, whiten_cmap('Blues'), 
                         grid.features_domain, [0, np.max(grid.activity_per_bin)], 
-                        xlabel=self.features_list[0], ylabel=self.features_list[1])
+                        xlabel=self.features_list[0].capitalize(), ylabel=self.features_list[1].capitalize())
         print("A plot of the activity grid was saved in '%s'." % os.path.abspath(plot_path))
-
+        
 
     def _removeTmpFiles(self, fileList):
         keepTemporaryFiles = self.config.get('keepTemporaryFiles')
