@@ -122,7 +122,7 @@ def get_stored_structure(structure_path):
     """
     Returns a structure previously stored in
     """
-    structure_data = np.load(os.path.join(structure_path, 'structure.npz'))
+    structure_data = np.load(structure_path)
     structure = []
     for key, value in structure_data.items():
         structure.append(value)
