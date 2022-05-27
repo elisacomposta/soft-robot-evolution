@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from utils.algo_utils import get_ind_path, get_stored_structure
@@ -64,19 +65,35 @@ def add_stroke(filename: str, size: int, color: str = 'black'):
 
 
 if __name__ == "__main__":
-    
-    ind = 2
-    experiment_name = 'test_qd_walker'
-    result_base_dir = 'results'
 
-    structure_path = get_ind_path(ind, os.path.join(result_base_dir, experiment_name))
-    body = get_stored_structure(structure_path)[0]
+    gen_algo = False
 
-    save_path = os.path.join(result_base_dir, experiment_name, 'images')
-    try:
-        os.makedirs(save_path)
-    except:
-        pass
+    inds = np.arange(0, 10)
+    experiment_name = 'test_qd'
+    generation = 0  # evogym only
+        
+    print()
+    for ind in inds:
+        
+        if gen_algo:
+            result_base_dir = os.path.join('evogym', 'examples', 'saved_data') 
+            structure_path = os.path.join(result_base_dir , experiment_name, 'generation_' + str(generation), 'structure', str(ind)+'.npz')
+        else:
+            result_base_dir = 'results' 
+            structure_path = os.path.join(get_ind_path(ind, os.path.join(result_base_dir, experiment_name)), 'structure.npz')
 
-    file_path = os.path.join(save_path, 'ind' + str(ind) + '.png')
-    render_body(body, file_path)
+        body = get_stored_structure(structure_path)[0]
+
+        save_path = os.path.join(result_base_dir, experiment_name, 'images')
+        try:
+            os.makedirs(save_path)
+        except:
+            pass
+
+        file_name = 'ind' + str(ind) + '.png'
+        if gen_algo:
+            file_name = 'gen' + str(generation) + '_ind' + str(ind) + '.png'
+
+        file_path = os.path.join(save_path, file_name)
+        render_body(body, file_path)
+        print("Saved image", file_name)
