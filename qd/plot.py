@@ -58,10 +58,13 @@ def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xtick
     
     if ax == None:
         fig, ax = plt.subplots()
-
+        
     # set ticks, labels, grid
-    ax.set_xticks(xticks)
-    ax.set_yticks(yticks)
+    if xticks[-1] > ax.get_xticks()[-1]:
+        ax.set_xticks(xticks)
+    if yticks[-1] > ax.get_yticks()[-1]:
+        ax.set_yticks(yticks)
+
     ax.set_xlabel(xlabel, fontsize = 12)
     ax.set_ylabel(ylabel, fontsize = 12)
     ax.grid(which='major', color=(0.8,0.8,0.8,0.5), linestyle='-', linewidth=0.1)
@@ -116,7 +119,13 @@ def plot_mean_trend(experiments, name, saving_path, results_dir, color, x_label=
                 coord_path = str(os.path.join(root, name+'.npy'))
 
         # load coordinates
-        x, y = np.load(coord_path, 'r')
+        res = np.load(coord_path, 'r')
+        if len(res) ==2:
+           x, y = res
+        elif len(res) == 3:
+            x, y, err = res
+        else:
+            print("Error in unpacking coordinates")
 
         # define 2d array to store the coordinates for each experiment (first iteration only)
         if j==0:        

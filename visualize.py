@@ -47,10 +47,10 @@ def visualize_codesign(args, exp_name):
 
         try:
             save_path_structure = get_ind_path(ind_number, exp_path)
-            structure = get_stored_structure(save_path_structure)
+            structure = get_stored_structure(os.path.join(save_path_structure, 'structure.npz'))
             print(f'\nRobot body:\n{structure[0]}\n')
         except:
-            print(f'\nCould not load robot strucure data at {save_path_structure}/structure.npz.\n')
+            print(f'\nCould not load robot strucure data at {save_path_structure}.\n')
             continue
 
         if num_iters == 0:
