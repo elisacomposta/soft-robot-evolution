@@ -48,6 +48,7 @@ partial = functools.partial # type: ignore
 
 #from utils.algo_utils import EvaluationMap
 from evogym import hashable
+from utils.algo_utils import get_stored_structure
 
 default_algorithm_logger: Any
 
@@ -581,9 +582,6 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
         for fn in self._callbacks.get("started_optimisation"):
             fn(self)    
 
-        if structure_from !='':
-            print("Using structures from experiment:", structure_from)                                                   
-
         def optimisation_loop(budget_fn: Callable):
             global label
             budget = budget_fn()
@@ -619,11 +617,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     
                     # copy structure from existing experiment
                     if structure_from != '':
-                        structure_data = np.load(os.path.join('results', structure_from, 'generation_'+str(generation), 'ind'+str(label), 'structure.npz'))
-                        structure = []
-                        for key, value in structure_data.items():
-                            structure.append(value)
-                        structure = tuple(structure)
+                        structure = get_stored_structure(os.path.join('results', structure_from, 'generation_'+str(generation), 'ind'+str(label), 'structure.npz'))
                         ind.structure.body = structure[0]
                         ind.structure.connections = structure[1]
 

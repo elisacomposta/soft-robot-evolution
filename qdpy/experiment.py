@@ -110,8 +110,10 @@ class QDExperiment(object):
         self.log_base_path = self.config['dataDir']
         try:
             self.structure_from = self.config['from_exp']
+            self.reoptimize = self.config['controller_reoptimized']
         except:
             self.structure_from = ''
+            self.reoptimize = ''
 
     def run(self):
         # Run illumination process !
@@ -120,6 +122,12 @@ class QDExperiment(object):
                 history = self.population_structure_hashes
             except:
                 history = None
+
+            if self.structure_from !='':
+                print("Using structures from experiment:", self.structure_from)      
+            if self.reoptimize == False:
+                print("Using controllers from experiment:", self.structure_from)                                             
+
             best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, pop_structure_hashes=history, structure_from=self.structure_from)
 
         # Save results

@@ -15,14 +15,19 @@ from utils.algo_utils import TerminationCondition
 import utils.mp_group as mp
 
 from qd.features import *
+from evaluate import evaluate
+
 
 import sys
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.join(curr_dir, '..')
 external_dir = os.path.join(root_dir, 'externals')
 sys.path.insert(0, root_dir)
+sys.path.insert(1, os.path.join(external_dir, 'PyTorch-NEAT'))
 sys.path.insert(1, os.path.join(external_dir, 'pytorch_a2c_ppo_acktr_gail'))
 from ppo import run_ppo
+
+from ppo.envs import make_vec_envs
 
 ###### SIMULATION FUNCTIONS ######
 
@@ -50,6 +55,18 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
 
     group.run_jobs(num_cores)
     return inds
+
+
+
+def evaluate_ind(env_name, individuals, from_exp_name, num_cores=4):
+    group = mp.Group()
+
+    for ind in individuals:
+        controller_path = os.path.join(from_exp_name, 'generation_' + str(ind.structure.generation), 'ind' + str(ind.structure.label), 'controller.pt')
+
+        args = (env_name, (ind.structure.body, ind.structure.connections), controller_path)
+        group.add_job(evaluate, args, callback=ind.set_fitness)
+    group.run_jobs(num_cores)
 
 
 def make_env(env_name, seed=-1, ind=None):

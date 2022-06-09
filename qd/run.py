@@ -7,7 +7,7 @@ import traceback
 from torch import from_dlpack
 
 from qdpy.experiment import QDExperiment
-from qd.sim import compute_features, make_env, simulate
+from qd.sim import compute_features, make_env, simulate, evaluate_ind
 
 import time
 
@@ -34,7 +34,10 @@ class EvoGymExperiment(QDExperiment):
             compute_features(ind, self.features_list)   #da spostare sotto se calcola energia
             make_env(env_name = self.env_name, ind=ind)
 
-        simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
+        if self.reoptimize != '' and not self.reoptimize:
+            evaluate_ind(self.env_name, individuals, self.structure_from, num_cores=self.num_cores)
+        else:
+            simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
         
         ## STORE RESULTS
         store_results(path=self.save_path, individuals=individuals)
@@ -67,9 +70,11 @@ def store_metadata(exp, save_path):
     f.write(f'ENVIRONMENT: {exp.env_name}\n')
     f.write(f'CONFIGURATION FILE: {exp.config_filename}\n')
     f.write(f'INSTANCE: {exp.instance_name}\n')
-    f.write(f'SEED: {exp.config["seed"]}\n')
-    f.write(f'INDV EPS: {exp.config["indv_eps"]}\n')
-    f.write(f'SHAPE: {exp.shape}\n')
+    if exp.structure_from == '':
+        f.write(f'SEED: {exp.config["seed"]}\n')
+        f.write(f'SHAPE: {exp.shape}\n')
+    if exp.reoptimize != False:
+        f.write(f'INDV EPS: {exp.config["indv_eps"]}\n')
     f.write(f'FITNESS: {exp.fitness_type}\n')
     f.write(f'FEATURES: {exp.features_list}\n')
     f.write("\n")
