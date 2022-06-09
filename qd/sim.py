@@ -54,6 +54,10 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
         group.add_job(run_ppo, ppo_args, callback=ind.set_fitness)
 
     group.run_jobs(num_cores)
+    """for ind in inds:
+        ind.structure.reward = np.random.uniform(10)
+        ind.set_fitness(ind.structure.reward)
+        print("Fitness:", ind.fitness)"""
     return inds
 
 
@@ -64,7 +68,7 @@ def evaluate_ind(env_name, individuals, from_exp_name, num_cores=4):
     for ind in individuals:
         controller_path = os.path.join(from_exp_name, 'generation_' + str(ind.structure.generation), 'ind' + str(ind.structure.label), 'controller.pt')
 
-        args = (env_name, (ind.structure.body, ind.structure.connections), controller_path)
+        args = (env_name, (ind.structure.body, ind.structure.connections), controller_path, ind.structure.label)
         group.add_job(evaluate, args, callback=ind.set_fitness)
     group.run_jobs(num_cores)
 

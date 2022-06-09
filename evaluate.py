@@ -15,8 +15,8 @@ from ppo.utils import get_vec_normalize
 from ppo.envs import make_vec_envs
 
 
-def evaluate(env_name, structure, path_controller, num_iters=500):
-    print('\nEvaluating structure:\n', structure[0], '\n')
+def evaluate(env_name, structure, path_controller, ind_label, num_iters=500):
+    print('\nEvaluating individual', ind_label, '\n', structure[0], '\n')
 
     path_controller = os.path.join(root_dir, 'results', path_controller)
     
