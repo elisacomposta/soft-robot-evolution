@@ -2,7 +2,8 @@ seed: 1
 indv_eps: 60
 env_name: 'Carrier-v0'
 batch_mode: True
-from_exp: 'test_walker'
+from_exp: 'test_pusher'
+controller_reoptimized: False
 
 fitness_type: "reward"
 rewardDomain: [0., 10.]
