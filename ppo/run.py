@@ -204,7 +204,7 @@ def run_ppo(
                             action_loss))
         
         # evaluate the controller and save it if it does the best so far
-        if (args.eval_interval is not None and len(episode_rewards) > 1     #len(episode_reward): inizialmente 0, dopo un po' aumenta
+        if (args.eval_interval is not None and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
             
             obs_rms = utils.get_vec_normalize(envs).obs_rms

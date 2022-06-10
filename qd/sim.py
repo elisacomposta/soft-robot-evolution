@@ -15,8 +15,6 @@ from utils.algo_utils import TerminationCondition
 import utils.mp_group as mp
 
 from qd.features import *
-from evaluate import evaluate
-
 
 import sys
 curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +26,8 @@ sys.path.insert(1, os.path.join(external_dir, 'pytorch_a2c_ppo_acktr_gail'))
 from ppo import run_ppo
 
 from ppo.envs import make_vec_envs
+from ppo.evaluate import evaluate
+from ppo import utils
 
 ###### SIMULATION FUNCTIONS ######
 
@@ -66,10 +66,29 @@ def evaluate_ind(env_name, individuals, from_exp_name, num_cores=4):
     group = mp.Group()
 
     for ind in individuals:
-        controller_path = os.path.join(from_exp_name, 'generation_' + str(ind.structure.generation), 'ind' + str(ind.structure.label), 'controller.pt')
+        print('\nEvaluating individual', ind.structure.label, '\n', ind.structure.body, '\n')
 
-        args = (env_name, (ind.structure.body, ind.structure.connections), controller_path, ind.structure.label)
+        # load controller
+        path_controller = os.path.join(root_dir, 'results', from_exp_name, 'generation_' + str(ind.structure.generation), 'ind' + str(ind.structure.label), 'controller.pt')
+        try:
+            import torch
+            save_path_controller = path_controller
+            actor_critic, obs_rms = torch.load(save_path_controller, map_location='cpu')
+        except:
+            print(f'\nCould not load robot controller data at {save_path_controller}.\n')
+            return
+
+        # set log dir
+        log_dir = '/tmp/gym/'
+        eval_log_dir = log_dir + "_eval"
+        utils.cleanup_log_dir(log_dir)
+        utils.cleanup_log_dir(eval_log_dir)
+
+        # set evaluation functions to run
+        args = (1, actor_critic, obs_rms, env_name, (ind.structure.body, ind.structure.connections), 1, 4, eval_log_dir, 'cpu', True)   # same parameters parsed to ppo on all exp
         group.add_job(evaluate, args, callback=ind.set_fitness)
+
+    # run evaluations
     group.run_jobs(num_cores)
 
 
