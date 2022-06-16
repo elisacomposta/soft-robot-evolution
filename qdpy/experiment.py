@@ -29,6 +29,9 @@ import random
 import datetime
 import pathlib
 import shutil
+import math
+
+from utils.algo_utils import best_in_exp, get_ind_path, get_stored_structure
 
 class QDExperiment(object):
     def __init__(self, config_filename, parallelism_type = "sequential", seed = None, base_config = None):
@@ -124,11 +127,22 @@ class QDExperiment(object):
                 history = None
 
             if self.structure_from !='':
-                print("Using structures from experiment:", self.structure_from)      
+                print("Using structures from experiment:", self.structure_from)  
+                structures = []
+                # get list of best individuals in map    
+                top_in_exp = best_in_exp(os.path.join('results', self.structure_from), 100, bounds=[0, 50])
+                for ind in top_in_exp:
+                    structure_path = os.path.join(get_ind_path(ind, os.path.join('results', self.structure_from)), 'structure.npz')
+                    structures.append(get_stored_structure(structure_path))
+                self.structures = structures
+                self.budget=len(self.structures)
+            else:
+                self.structures = None
+                self.budget = None
             if self.reoptimize == False:
                 print("Using controllers from experiment:", self.structure_from)                                             
 
-            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, batch_mode=self.batch_mode, pop_structure_hashes=history, structure_from=self.structure_from)
+            best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, budget=self.budget, batch_mode=self.batch_mode, pop_structure_hashes=history, structures=self.structures)
 
         # Save results
         if isinstance(self.container, Grid):
@@ -164,11 +178,12 @@ class QDExperiment(object):
                     tot_random = algo_budget['Random'], showRandCol=True)
         print("A plot of the activity trend was saved in '%s'." % os.path.abspath(plot_path))
 
+
         # Create plot of the performance grid
         plot_path = os.path.join(self.log_base_path, f"performancesGrid-{self.instance_name}.pdf")
-        quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]        
+        quality = grid.quality_array[(slice(None),) * (len(grid.quality_array.shape) - 1) + (0,)]      
         plotGridSubplots(quality, plot_path, plt.get_cmap("YlGn"),
-                        grid.features_domain, grid.fitness_domain[0], 
+                        grid.features_domain, [math.floor( np.nanmin(quality) ), math.ceil( np.nanmax(quality) )], 
                         xlabel=self.features_list[0].capitalize(), ylabel=self.features_list[1].capitalize())
         print("A plot of the performance grid was saved in '%s'." % os.path.abspath(plot_path))
 

@@ -31,7 +31,7 @@ class EvoGymExperiment(QDExperiment):
     def eval_fn(self, individuals):
         
         for ind in individuals:
-            compute_features(ind, self.features_list)   #da spostare sotto se calcola energia
+            compute_features(ind, self.features_list)
             make_env(env_name = self.env_name, ind=ind)
 
         if self.reoptimize != '' and not self.reoptimize:
@@ -73,8 +73,12 @@ def store_metadata(exp, save_path):
     if exp.structure_from == '':
         f.write(f'SEED: {exp.config["seed"]}\n')
         f.write(f'SHAPE: {exp.shape}\n')
+    else:
+        f.write(f'STRUCTURES FROM: {exp.structure_from}\n')
     if exp.reoptimize != False:
         f.write(f'INDV EPS: {exp.config["indv_eps"]}\n')
+    else:
+        f.write('REOPTIMIZE CONTROLLER: True\n')
     f.write(f'FITNESS: {exp.fitness_type}\n')
     f.write(f'FEATURES: {exp.features_list}\n')
     f.write("\n")

@@ -54,10 +54,7 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
         group.add_job(run_ppo, ppo_args, callback=ind.set_fitness)
 
     group.run_jobs(num_cores)
-    """for ind in inds:
-        ind.structure.reward = np.random.uniform(10)
-        ind.set_fitness(ind.structure.reward)
-        print("Fitness:", ind.fitness)"""
+
     return inds
 
 
@@ -123,7 +120,7 @@ def compute_features(ind, features_list):
             "verticalActuation": v_actuation,
             "horizontalActuation": h_actuation
     } 
-    ind.features.values = [scores[x] for x in features_list]
+    ind.features.values = [scores[x]*10*0.1 for x in features_list]
 
 
 ### GET ENVIRONMENT ###

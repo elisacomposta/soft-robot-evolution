@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import pandas as pd
+import math
 from evogym import is_connected, has_actuator, get_full_connectivity, draw, get_uniform
 
 class Structure():
@@ -128,3 +130,37 @@ def get_stored_structure(structure_path):
         structure.append(value)
     structure = tuple(structure)
     return structure
+
+def best_in_exp(exp, n, bounds=[-50, 50]):
+    """
+    Args:
+        exp:    path of the experiment to get the best individuals from
+        n:      number of top individuals to find (Note: max is the number of cells in the map)
+        bounds: fitness domain mask [optional]
+    Returns:
+        the labels of the best n individuals in exp
+    """
+    
+    df = pd.read_csv(os.path.join(exp, 'results.csv'), delimiter=';', header=None)  # read results csv
+    df2 = df.sort_values(by=df.columns[3], ascending = False)   # sort by fitness value
+
+    top = {}    # keys: unique floored features, values: ind number
+
+    row_index = 0
+    while len(top) < n and row_index < len(df2.index):
+        row = df2.iloc[row_index]
+        features = ( float(row[2].split(',')[0][1:4]), float(row[2].split(',')[1][1:4]) )
+
+        if features[0] == 1.0:
+            features = (0.9, features[1])
+        if features[1] == 1.0:
+            features = (features[0], 0.9)
+            
+        if features not in top.keys() and row[3]>bounds[0]:
+            top[features] = row[0][3:]
+        row_index += 1
+
+    top = list(top.values())
+
+    print("Found top", len(top), "individuals at", exp)
+    return top

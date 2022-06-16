@@ -548,7 +548,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
 
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, batch_mode: bool = True,
-            executor: Optional[ExecutorLike] = None, pop_structure_hashes: dict = None, structure_from: str = '') -> tuple:
+            executor: Optional[ExecutorLike] = None, pop_structure_hashes: dict = None, structures = None) -> tuple:
         """
         Optimization process.
 
@@ -558,7 +558,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
             batch_mode (bool): if True, evaluate batch_size individuals each time
             executor (ExecutorLike): type of executor
             pop_structure_hashes (dict): keep track of already evaluated structures to avoid duplicates
-            structure_from (string): if provided, copy ind structure from 'structure_from' experiment
+            structure (list): if provided, structures of individuals to evaluate
 
         Returns:
             best_after_eval (dict): key=evaluations, value=best fitness after evaluations
@@ -604,7 +604,7 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                 while len(individuals) < nb_suggestions:
                     ind: IndividualLike = self.ask()
                     if ind.structure != None:
-                        if pop_structure_hashes == None or structure_from!='':    # no track of structures
+                        if pop_structure_hashes == None or structures!=None:    # no track of structures
                             individuals.append(ind)
                         elif hashable(ind.structure.body) not in pop_structure_hashes: # structure not evaluated yet
                             individuals.append(ind)
@@ -616,10 +616,9 @@ class QDAlgorithm(abc.ABC, QDAlgorithmLike, Summarisable, Saveable, Copyable, Cr
                     ind.structure.generation = generation
                     
                     # copy structure from existing experiment
-                    if structure_from != '':
-                        structure = get_stored_structure(os.path.join('results', structure_from, 'generation_'+str(generation), 'ind'+str(label), 'structure.npz'))
-                        ind.structure.body = structure[0]
-                        ind.structure.connections = structure[1]
+                    if structures != None:
+                        ind.structure.body = structures[label-1][0]
+                        ind.structure.connections = structures[label-1][1]
 
                 individuals = evaluate(individuals)
 
@@ -913,10 +912,10 @@ class Sq(QDAlgorithmLike, Summarisable, Saveable, Copyable, CreatableFromConfig)
 
     def optimise(self, evaluate: Callable, budget: Optional[int] = None, 
             batch_mode: bool = True, executor: Optional[ExecutorLike] = None,
-            pop_structure_hashes: dict = None, structure_from: str = '') -> tuple:
+            pop_structure_hashes: dict = None, structures: str = '') -> tuple:
         for _ in range(self.current_idx, len(self.algorithms)):
             try:
-                res = self.current.optimise(evaluate, budget, batch_mode, executor, pop_structure_hashes=pop_structure_hashes, structure_from=structure_from)
+                res = self.current.optimise(evaluate, budget, batch_mode, executor, pop_structure_hashes=pop_structure_hashes, structures=structures)
             except Exception as e:
                 warnings.warn(f"Optimisation failed with algorithm '{self.current.name}': {e}")
                 traceback.print_exc()
