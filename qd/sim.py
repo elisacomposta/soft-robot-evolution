@@ -67,7 +67,7 @@ def evaluate_ind(env_name, individuals, from_exp_name, from_labels, num_cores=4)
 
         # find controller path
         for (root,dirs,files) in  os.walk(os.path.join('results', from_exp_name), topdown=True):
-            if 'ind' + str(from_labels[i]) in dirs:
+            if 'ind' + str(from_labels[individuals[i].structure.label-1]) in dirs:
                 path_controller = os.path.join(root, 'ind' + str(from_labels[individuals[i].structure.label-1]), 'controller.pt')
         
         # load controller
