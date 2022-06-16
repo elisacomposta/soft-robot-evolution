@@ -59,14 +59,18 @@ def simulate(env_name, inds, experiment_name, num_episode=5, num_cores=4):
 
 
 
-def evaluate_ind(env_name, individuals, from_exp_name, num_cores=4):
+def evaluate_ind(env_name, individuals, from_exp_name, from_labels, num_cores=4):
     group = mp.Group()
 
-    for ind in individuals:
-        print('\nEvaluating individual', ind.structure.label, '\n', ind.structure.body, '\n')
+    for i in range(len(individuals)):
+        print('\nEvaluating individual', individuals[i].structure.label, '\n', individuals[i].structure.body, '\n')
 
+        # find controller path
+        for (root,dirs,files) in  os.walk(os.path.join('results', from_exp_name), topdown=True):
+            if 'ind' + str(from_labels[i]) in dirs:
+                path_controller = os.path.join(root, 'ind' + str(from_labels[i]), 'controller.pt')
+        
         # load controller
-        path_controller = os.path.join(root_dir, 'results', from_exp_name, 'generation_' + str(ind.structure.generation), 'ind' + str(ind.structure.label), 'controller.pt')
         try:
             import torch
             save_path_controller = path_controller
@@ -82,8 +86,8 @@ def evaluate_ind(env_name, individuals, from_exp_name, num_cores=4):
         utils.cleanup_log_dir(eval_log_dir)
 
         # set evaluation functions to run
-        args = (1, actor_critic, obs_rms, env_name, (ind.structure.body, ind.structure.connections), 1, 4, eval_log_dir, 'cpu', True)   # same parameters parsed to ppo on all exp
-        group.add_job(evaluate, args, callback=ind.set_fitness)
+        args = (1, actor_critic, obs_rms, env_name, (individuals[i].structure.body, individuals[i].structure.connections), 1, 4, eval_log_dir, 'cpu', True)   # same parameters parsed to ppo on all exp
+        group.add_job(evaluate, args, callback=individuals[i].set_fitness)
 
     # run evaluations
     group.run_jobs(num_cores)

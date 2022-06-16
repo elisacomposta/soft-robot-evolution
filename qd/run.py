@@ -35,7 +35,7 @@ class EvoGymExperiment(QDExperiment):
             make_env(env_name = self.env_name, ind=ind)
 
         if self.reoptimize != '' and not self.reoptimize:
-            evaluate_ind(self.env_name, individuals, self.structure_from, num_cores=self.num_cores)
+            evaluate_ind(self.env_name, individuals, self.structure_from, from_labels=self.from_labels, num_cores=self.num_cores)
         else:
             simulate(self.env_name, individuals, self.experiment_name, self.config[('indv_eps')], num_cores=self.num_cores)  #compute fitness
         

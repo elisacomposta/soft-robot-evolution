@@ -136,11 +136,14 @@ class QDExperiment(object):
                     structures.append(get_stored_structure(structure_path))
                 self.structures = structures
                 self.budget=len(self.structures)
+                
+                if self.reoptimize == False:
+                    print("Using controllers from experiment:", self.structure_from) 
+                    self.from_labels = top_in_exp
             else:
                 self.structures = None
                 self.budget = None
-            if self.reoptimize == False:
-                print("Using controllers from experiment:", self.structure_from)                                             
+
 
             best_after_eval, activity_after_eval = self.algo.optimise(self.eval_fn, executor = pMgr.executor, budget=self.budget, batch_mode=self.batch_mode, pop_structure_hashes=history, structures=self.structures)
 
