@@ -3,6 +3,7 @@ import numpy as np
 import os
 import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap
+import math
 
 def plotTrend(x, y, path, fileName, error=[], xlabel = "", ylabel = "", nb_xticks = 10, nb_yticks = 7, y_whole = False, color = 'blue', tot_random = 0, showRandCol = False, ax=None, line_label=''):
     """
@@ -195,7 +196,8 @@ def plot_mean_grid(experiments, name, color, saving_path, results_dir, x_label='
     # plot grid
     from qdpy.plots import plotGridSubplots
     if fitnessDomain == None:
-        fitnessDomain = [0, np.max(mean_grid)]
+        fitnessDomain = [math.floor( np.nanmin(mean_grid) ), math.ceil( np.nanmax(mean_grid) )]
+
     plotGridSubplots(mean_grid, path, plt.get_cmap(color),
                     featuresBounds=[(0.0, 1.0), (0.0, 1.0)],
                     fitnessBounds=fitnessDomain, 
