@@ -4,7 +4,7 @@ env_name: 'Walker-v0'
 batch_mode: True
 
 fitness_type: "reward"
-rewardDomain: [0., 10.]
+rewardDomain: [-50., 50.]
 
 features_list:  ["actuation", "emptiness"]
 lengthDomain: [1, 5]

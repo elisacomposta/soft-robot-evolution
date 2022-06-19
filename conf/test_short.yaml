@@ -1,12 +1,10 @@
 seed: 32
 indv_eps: 5
-env_name: 'Carrier-v0'
+env_name: 'Walker-v0'
 batch_mode: True
-from_exp: 'pusher2000_60eps_1'
-controller_reoptimized: False
 
 fitness_type: "reward"
-rewardDomain: [-10., 10.]
+rewardDomain: [-50., 50.]
 
 features_list: ["actuation", "emptiness"]
 lengthDomain: [1, 5]
@@ -36,15 +34,15 @@ algorithms:
 
     algoInit:
         type: Random
-        budget: 1                     # The total number of allowed evaluations
-        batch_size: 12
+        budget: 4                     # The total number of allowed evaluations
+        batch_size: 2
 
     algoQD:
         type: Mutation
-        budget: 1                     # The total number of allowed evaluations
-        batch_size: 28
+        budget: 6                     # The total number of allowed evaluations
+        batch_size: 2
     
     algoTotal:
         type: Sq                        # Sequence (Sq) of algorithms to execute them one after the other
-        algorithms: ['algoInit']
+        algorithms: ['algoInit', 'algoQD']
         tell_container_when_switching: only_best

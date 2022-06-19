@@ -3,10 +3,10 @@ indv_eps: 60
 env_name: 'Carrier-v0'
 batch_mode: True
 from_exp: 'test_pusher'
-controller_reoptimized: False
+controller_reoptimized: True
 
 fitness_type: "reward"
-rewardDomain: [0., 10.]
+rewardDomain: [-50., 50.]
 
 features_list:  ["actuation", "emptiness"]
 lengthDomain: [1, 5]
@@ -36,15 +36,10 @@ algorithms:
 
     algoInit:
         type: Random
-        budget: 500                     # The total number of allowed evaluations
-        batch_size: 28
-
-    algoQD:
-        type: Mutation
-        budget: 1500                     # The total number of allowed evaluations
-        batch_size: 28
+        budget: 100                     # The total number of allowed evaluations
+        batch_size: 100
     
     algoTotal:
         type: Sq                        # Sequence (Sq) of algorithms to execute them one after the other
-        algorithms: ['algoInit', 'algoQD']
+        algorithms: ['algoInit']
         tell_container_when_switching: only_best
