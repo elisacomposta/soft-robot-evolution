@@ -36,3 +36,26 @@ Run the example using the following command.
 python run_qd.py --algo ppo --use-gae --lr 2.5e-4 --clip-param 0.1 --value-loss-coef 0.5 --num-processes 4 --num-steps 128 --num-mini-batch 4 --log-interval 100 --use-linear-lr-decay --entropy-coef 0.01 --no-cuda --eval-interval 20
 ```
 All PPO hyperparameters are specified through command line arguments. For more details please see [this repo](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail).
+
+# Plot
+## avg_plots.py
+It allows the realization of single or mediated maps and trends after an experiment has finished, thanks to the stored plot data.<br>
+Set the parameters:
+* `qd_plot`, `evogym_plot`, `compare_exp`: one of them shoud be True, to choose which plot to make
+* `experiments`: names of the stored experiments
+* `results_dir`: path where to save the plots
+* `fitness_domain`: set the domain of the fitness (optional)
+* `features`: features used in the experiment
+* `tot_random`: number of randomly generated individuals, to plot vertical line (optionl)
+
+
+## render_body.py
+Store images of the evaluated individuals. Set the following parameters:
+* `exp_name`: name of the experiment
+* `gen_algo`: if true, looks for the experiment in _evogym/examples/saved_data_
+* `inds`: list of labels of the individual to store
+* `store_in_order`: if true, store design as _num_indLabel_
+* `generation`: if using gen algo experiment
+
+# Visualize simulation
+Run `python visualize.py` and follow the instructions to visualize the simulation an individual from a stored experiment.
