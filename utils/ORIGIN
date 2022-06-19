@@ -4,3 +4,4 @@ Changes:
  - algo_utils.py:
      - structure also saves shape, generation
      - add simple useful functions to work with files and stored individuals
+     - add function to retrieve the best individuals of an exp

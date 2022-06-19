@@ -2,7 +2,11 @@ Derived from https://gitlab.com/leo.cazenille/qdpy
 
 Changes:
  - phenotype.py: add structure to class Individual, set fitness
- - experiment.py: don't save final.p, don't show summary, set labels, track evolution history, save fitness trend
+ - experiment.py: 
+      - don't save final.p, don't show summary, set labels
+      - track evolution history
+      - save fitness trend
+      - allow validation and re optimization of best ind of other exp
  - plots.py: ignore warnings (due to version compatibility), store plot data
  - algorithms/base.py: 
       - keep track of generation and labels (in optimise)
