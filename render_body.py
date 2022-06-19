@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from utils.algo_utils import get_ind_path, get_stored_structure
 from PIL import Image, ImageFilter, ImageDraw
+from utils.algo_utils import best_in_exp
 
 ### VOXEL COLORS
 EMPTY_VOXEL = (255.0/255.0, 255.0/255.0, 255.0/255.0, 0)
@@ -37,6 +38,7 @@ def render_body(body, file):
     # save image
     plt.savefig(file, bbox_inches="tight", transparent=True)    # save image with no stroke
     add_stroke(file, 1) # override image, add stroke
+    plt.close(fig)
 
 
 def add_stroke(filename: str, size: int, color: str = 'black'):
@@ -68,19 +70,20 @@ if __name__ == "__main__":
 
     gen_algo = False
 
-    inds = np.arange(0, 10)
     experiment_name = 'test_qd'
-    generation = 0  # evogym only
-        
+    store_in_order = True
+    inds = best_in_exp(os.path.join('results', experiment_name), 6)    # render best in MAP-Elites exp
+    generation = 29  # evogym only
+    
     print()
-    for ind in inds:
-        
+    i=1
+    for i in range(len(inds)):
         if gen_algo:
             result_base_dir = os.path.join('evogym', 'examples', 'saved_data') 
-            structure_path = os.path.join(result_base_dir , experiment_name, 'generation_' + str(generation), 'structure', str(ind)+'.npz')
+            structure_path = os.path.join(result_base_dir , experiment_name, 'generation_' + str(generation), 'structure', str(inds[i])+'.npz')
         else:
             result_base_dir = 'results' 
-            structure_path = os.path.join(get_ind_path(ind, os.path.join(result_base_dir, experiment_name)), 'structure.npz')
+            structure_path = os.path.join(get_ind_path(inds[i], os.path.join(result_base_dir, experiment_name)), 'structure.npz')
 
         body = get_stored_structure(structure_path)[0]
 
@@ -90,9 +93,11 @@ if __name__ == "__main__":
         except:
             pass
 
-        file_name = 'ind' + str(ind) + '.png'
+        file_name = 'ind' + str(inds[i]) + '.png'
+        if store_in_order:
+            file_name = str(i) + '_' + file_name
         if gen_algo:
-            file_name = 'gen' + str(generation) + '_ind' + str(ind) + '.png'
+            file_name = 'gen' + str(generation) + '_ind' + str(inds[i]) + '.png'
 
         file_path = os.path.join(save_path, file_name)
         render_body(body, file_path)
