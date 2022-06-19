@@ -130,7 +130,7 @@ class QDExperiment(object):
                 print("Using structures from experiment:", self.structure_from)  
                 structures = []
                 # get list of best individuals in map    
-                top_in_exp = best_in_exp(os.path.join('results', self.structure_from), 100, bounds=[0, 50])
+                top_in_exp = best_in_exp(os.path.join('results', self.structure_from), 100, bounds=[-50, 50])
                 for ind in top_in_exp:
                     structure_path = os.path.join(get_ind_path(ind, os.path.join('results', self.structure_from)), 'structure.npz')
                     structures.append(get_stored_structure(structure_path))
