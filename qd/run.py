@@ -78,7 +78,7 @@ def store_metadata(exp, save_path):
     if exp.reoptimize != False:
         f.write(f'INDV EPS: {exp.config["indv_eps"]}\n')
     else:
-        f.write('REOPTIMIZE CONTROLLER: True\n')
+        f.write('REOPTIMIZE CONTROLLER: False\n')
     f.write(f'FITNESS: {exp.fitness_type}\n')
     f.write(f'FEATURES: {exp.features_list}\n')
     f.write("\n")
