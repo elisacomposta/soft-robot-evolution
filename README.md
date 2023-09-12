@@ -3,7 +3,7 @@ Soft robot evolution using:
 - [EvolutionGym](https://github.com/EvolutionGym/evogym) benchmark, to co-optimize control and design and run simulations
 - Map Elites, provided by [QDPY](https://gitlab.com/leo.cazenille/qdpy), to promote diversity
 
-# Installation
+## Installation
 
 Clone the repository:
 ```shell
@@ -20,7 +20,7 @@ git clone --recurse-submodules https://github.com/elisacomposta/evogym.git
 ```
 and follow the instructions to install it at [evogym repository](https://github.com/elisacomposta/evogym.git)
 
-# Run example
+## Run example
 Parameters can be defined in `run_qd.py`:
 - `experiment_name` = name of the experiment; all results are saved in results/experiment_name
 - `configFileName` = name of the YAML configuration file
@@ -37,8 +37,8 @@ python run_qd.py --algo ppo --use-gae --lr 2.5e-4 --clip-param 0.1 --value-loss-
 ```
 All PPO hyperparameters are specified through command line arguments. For more details please see [this repo](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail).
 
-# Plot
-## avg_plots.py
+## Plot
+### avg_plots.py
 It allows the realization of single or mediated maps and trends after an experiment has finished, thanks to the stored plot data.<br>
 Set the parameters:
 * `qd_plot`, `evogym_plot`, `compare_exp`: one of them shoud be True, to choose which plot to make
@@ -49,7 +49,7 @@ Set the parameters:
 * `tot_random`: number of randomly generated individuals, to plot vertical line (optionl)
 
 
-## render_body.py
+### render_body.py
 Store images of the evaluated individuals. Set the following parameters:
 * `exp_name`: name of the experiment
 * `gen_algo`: if true, looks for the experiment in _evogym/examples/saved_data_
@@ -57,5 +57,5 @@ Store images of the evaluated individuals. Set the following parameters:
 * `store_in_order`: if true, store design as _num_indLabel_
 * `generation`: if using gen algo experiment
 
-# Visualize simulation
+## Visualize simulation
 Run `python visualize.py` and follow the instructions to visualize the simulation an individual from a stored experiment.
